@@ -16,7 +16,7 @@ import shutil
 import adafruit_dht
 import gpiod
 import board
-import pyserial
+import serial
 
 ### Global Variables
 ##
@@ -89,11 +89,11 @@ class Builder:
 		os.mkdir(ResultsFiles)
 
 	def build_loggers(self):
-		cpu = CpuLog(2)
-		dht = DhtLog(5)
+		self.cpu = CpuLog(2)
+		self.dht = DhtLog(5)
 
-		cpu.build_logger()
-		dht.build_logger()
+		self.cpu.build_logger()
+		self.dht.build_logger()
 
 	def run_loggers(self):
 		global continueLogging
@@ -129,15 +129,15 @@ class CpuLog:
 				cpuTemp = cpuTempRaw / 1000
 
 			except RunTimeError:
-				print("0.0,")
+				print("c-0.0,")
 				self.failure+=1
 				pass
 
 			if cpuTemp is not None:
 				self.success+=1
-				print("{0:0.01f},{1:d}".format(cpuTemp,self.success))
+				print("c-{0:0.01f},s-{1:d},f-{2:d}".format(cpuTemp,self.success, self.failure))
 			else:
-				print("0.00,")
+				print("c-0.00,")
 				self.failure+=1
 
 			time.sleep(self.cpuInterval)
@@ -146,8 +146,8 @@ class CpuLog:
 	def start_logging(self):
 		self.thread.start()
 
-	def build_log(self):
-		thread = threading.Thread(target=self.log, name="CpuLogger")
+	def build_logger(self):
+		self.thread = threading.Thread(target=self.log, name="CpuLogger")
 
 
 # End CpuLog
@@ -166,22 +166,22 @@ class DhtLog:
 				dhtTemp = DHT_SENSOR.temperature
 			except RunTimeError:
 				self.failure+=1
-				print("0.0,")
+				print("d-0.0,")
 				pass
 
 			if dhtTemp is not None:
 				self.success+=1
-				print("{0:0.01f}, success - {1:d}, failure - {2:d}".format(dhtTemp, self.success, self.failure))
+				print("d-{0:0.01f},s-{1:d},f-{2:d}".format(dhtTemp, self.success, self.failure))
 			else:
 				self.failure+=1
-				print("0.00,")
+				print("d-0.00,")
 			time.sleep(self.dhtInterval)
 
 	def start_logging(self):
 		self.thread.start()
 
 	def build_logger(self):
-		thread = threading.Thread(target=self.log, name="DhtLogger")
+		self.thread = threading.Thread(target=self.log, name="DhtLogger")
 
 # End DhtLog
 
