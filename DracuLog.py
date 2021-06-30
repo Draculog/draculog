@@ -16,6 +16,7 @@ import shutil
 import adafruit_dht
 import gpiod
 import board
+import pyserial
 
 ### Global Variables
 ##
@@ -87,17 +88,25 @@ class Builder:
 				print("Error while executing shutil")
 		os.mkdir(ResultsFiles)
 
+	def build_loggers(self):
+		cpu = CpuLog(2)
+		dht = DhtLog(5)
+
+		cpu.build_logger()
+		dht.build_logger()
 
 	def run_loggers(self):
-		cpu = CpuLog(2)
-		dht = DhtLog(1)
 		global continueLogging
 		continueLogging = True
 		time.sleep(1)
+
 		startTime = time.time()
-		dht.start_logging()
-		cpu.start_logging()
+		self.dht.start_logging()
+		self.cpu.start_logging()
+
+		# Do stuff
 		time.sleep(10)
+
 		continueLogging = False
 		endTime = time.time()
 		print("Elapsed time is " + str(endTime - startTime))
@@ -135,20 +144,10 @@ class CpuLog:
 			self.counter+=1
 
 	def start_logging(self):
-		#print("start cpu")
-		thread = threading.Thread(target=self.log, name="CpuLogger")
-		thread.start()
-		# grabs start time
-		# starts logging CPU temps to file "/Results/CpuTemps.log"
-		# sleeps for self.cpuInterval amount of time
-		# Looks this forever until CpuLog.stopLogging is called
-			## Maybe while loop attached to a bool that is then flipped when stop is called?
-			## Look into making this work on another thread instead of this main one? Async somehow?
-				### something like "new_thread = threading.Thread(target=function_that's_previously_called, name="Function_Name", args=some_args)"
-				### "new_thread.start()"
+		self.thread.start()
 
-	def stop_logging(self):
-		print("Stop with " + str(self.counter) + " executions")
+	def build_log(self):
+		thread = threading.Thread(target=self.log, name="CpuLogger")
 
 
 # End CpuLog
@@ -159,6 +158,7 @@ class DhtLog:
 	failure = 0
 	def __init__(self, dhtInterval):
 		self.dhtInterval = dhtInterval
+
 	def log(self):
 		self.counter = 0
 		while continueLogging:
@@ -178,20 +178,10 @@ class DhtLog:
 			time.sleep(self.dhtInterval)
 
 	def start_logging(self):
-		#print("start dht")
-		thread = threading.Thread(target=self.log, name="DhtLogger")
-		thread.start()
-		# grabs start time
-		# starts logging DHT
-		# sleeps for self.cpuInterval amount of time
-		# Looks this forever until CpuLog.stopLogging is called
-			## Maybe while loop attached to a bool that is then flipped when stop is called?
-			## Look into making this work on another thread instead of this main one? Async somehow?
-				### something like "new_thread = threading.Thread(target=function_that's_previously_called, name="Function_Name", args=some_args)"
-				### "new_thread.start()"
+		self.thread.start()
 
-	def stop_logging(self):
-		print("Stop with " + str(self.counter) + " executions")
+	def build_logger(self):
+		thread = threading.Thread(target=self.log, name="DhtLogger")
 
 # End DhtLog
 
@@ -220,6 +210,7 @@ input_string = input("Please enter the logging systems you want to do, seperated
 loggers = input_string.split()
 
 builder = Builder(loggers)
+builder.build_loggers()
 builder.run_loggers()
 
 # string control = ""
