@@ -23,6 +23,9 @@ import board
 highBaseTemp = 60 # Warm up to here
 lowBaseTemp = 55 # Cool down to here
 
+DHT_PIN = 4
+DHT_SENSOR = adafruit_dht.DHT22(DHT_PIN)
+
 ### Pre Execution
 ## This is only for testing purposes currently
 #
@@ -84,6 +87,7 @@ class Builder:
 				print("Error while executing shutil")
 		os.mkdir(ResultsFiles)
 
+
 	def run_loggers(self):
 		cpu = CpuLog(2)
 		dht = DhtLog(1)
@@ -101,15 +105,34 @@ class Builder:
 
 class CpuLog:
 # Start CpuLog
+	success = 0
+	failure = 0
 	def __init__(self, cpuInterval):
 		self.cpuInterval = cpuInterval
+
 	def log(self):
 		self.counter = 0
 		while continueLogging:
-			print("CPU Execution @  " + str(time.time()))
+			try:
+				tempfile = open('/sys/class/thermal/thermal_zone0/temp', "r")
+				cpuTempRaw = float(tempfile.read())
+				tempfile.close()
+				cpuTemp = cpuTempRaw / 1000
+
+			except RunTimeError:
+				print("0.0,")
+				self.failure+=1
+				pass
+
+			if cpuTemp is not None:
+				self.success+=1
+				print("{0:0.01f},{1:d}".format(cpuTemp,self.success))
+			else:
+				print("0.00,")
+				self.failure+=1
+
 			time.sleep(self.cpuInterval)
 			self.counter+=1
-		self.stop_logging()
 
 	def start_logging(self):
 		#print("start cpu")
@@ -132,15 +155,27 @@ class CpuLog:
 
 class DhtLog:
 # Start DhtLog
+	success = 0
+	failure = 0
 	def __init__(self, dhtInterval):
 		self.dhtInterval = dhtInterval
 	def log(self):
 		self.counter = 0
 		while continueLogging:
-			print("Dht Execution @  " +str(time.time()))
+			try:
+				dhtTemp = DHT_SENSOR.temperature
+			except RunTimeError:
+				self.failure+=1
+				print("0.0,")
+				pass
+
+			if dhtTemp is not None:
+				self.success+=1
+				print("{0:0.01f}, success - {1:d}, failure - {2:d}".format(dhtTemp, self.success, self.failure))
+			else:
+				self.failure+=1
+				print("0.00,")
 			time.sleep(self.dhtInterval)
-			self.counter+=1
-		self.stop_logging()
 
 	def start_logging(self):
 		#print("start dht")
