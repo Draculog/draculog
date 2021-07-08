@@ -6,18 +6,20 @@
 ### Imports
 ##
 # Imports for basic system processes
-import os
+import os # used all over for operations
 import sys
-import time
-import subprocess
-import threading
-import shutil
+import time # used to time everything (and to sleep for xInterval)
+import subprocess # used for code execution
+import threading # used to multi thread the loggers/sensors
+import shutil # used in results folder creation/deletion, install
+import configparser # install using pip
+import json # used to read in params file (so that file can be called anything and can be anything)
 # Imports for external attachments
-import adafruit_dht # for DHT Sensor
-import gpiod # for DHT Sensor
-import board # for DHT Sensor
-from gpiozero import CPUTemperature # for CPU Temp
-import serial
+import adafruit_dht # for DHT Sensor, install
+import gpiod # for DHT Sensor, install
+import board # for DHT Sensor, install
+from gpiozero import CPUTemperature # for CPU Temp, install
+import serial # install
 
 ### Global Variables
 ##
@@ -25,27 +27,31 @@ import serial
 highBaseTemp = 60 # Warm up to here
 lowBaseTemp = 55 # Cool down to here
 
-data_list = []
-
-SourceCodeFiles="./Source"
-ResultsFiles="./Results"
+data_list = [] # to store all data in 2D array [ [Time, Sensors, ...], [T, S, ...], ... ]
+params_list = []
 
 # Variables to read before execution
+controlTemp = False
 runCpuTempLog = False
 runDhtTempLog = False
 runEnergyLog = False
+useMakerHawk = False
+useLog4 = False
 runLoadLog = False
 runClean = False
-runTest = False
+runTest = True
 runConfig = False
 
 # Variables to read at execution
 cpuInterval = 1
 dhtInterval = 2
-length = 60
+loadInterval = 5
+energyInterval = 2
+
 # Grab Code from "/Source/" folder so this should be typed as "/Source/codeToRun"
-builtScript = "blank"
-sourceScript = "blank"
+sourceDir = "Source/"
+paramsFile = "file"
+executable = "file"
 
 ### Pre Execution
 ##
@@ -67,20 +73,80 @@ if len(sys.argv) > 1:
 
 class Builder:
 # Start Builder
-	#data_list = []
-
+	# TODO do I need this?
 	def __init__(self, loggers):
 		self.loggers = loggers
 
+	def read_config(self):
+		global sourceDir,paramsFile,controlTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
+		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
+
+		configReader = configparser.ConfigParser()
+		configReader.read("ReadMe.ini")
+
+		sourceDir = configReader.get("Parameters", "SourceDir")
+		paramsFile = configReader.get("Parameters", "ParamsFile")
+		controlTemp = configReader.getboolean("Parameters", "TempControl")
+
+		runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
+		cpuInterval = configReader.getint("Parameters", "CpuInterval")
+
+		runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
+		dhtInterval = configReader.getint("Parameters", "DhtInterval")
+
+		runLoadLog = configReader.getboolean("Parameters", "LoadLog")
+		loadInterval = configReader.getint("Parameters", "LoadInterval")
+
+		runEnergyLog = configReader.getboolean("Parameters", "EnergyLog")
+		energyInterval = configReader.getint("Parameters", "EnergyInterval")
+		useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
+		useLog4 = configReader.getboolean("Parameters", "Log4")
+
+		runClean = configReader.getboolean("Parameters", "CleanData")
+
+		return
+
+	def read_params(self):
+		global params_list, paramsFile
+		if not runConfig:
+			paramsFile = input("Please enter the name of your params file: ")
+		else:
+			print("Grabbing Paramaters from given file, located at " + sourceDir+paramsFile)
+
+		with open(sourceDir+paramsFile) as f:
+			variables = 
+		#print(variables)
+
+		return
+
 	def build_source_code(self):
-		sourceDir = "source"
+		global sourceDir,executable,paramsFile
+		#check if we are going to use java vs c++
 
 		if not runConfig:
-			sourceDir = input("Folder name (/foldername/:")
-			os.system("echo compiling source files via makefile using cmd make")
-			os.system("make")
+			# grab source files from user prompt
+			sourceDir = input("Folder name (foldername/): ")
 		else:
-			print("Exit")
+			# grab source files from config.ini
+			print("Grabbed Source Code, building code located at: " + sourceDir)
+
+		if not os.path.isdir(sourceDir):
+			print("ERROR, source dir DNE")
+			return
+
+		if not os.path.isfile(sourceDir + "Makefile"):
+			print("ERROR, source dir Makefile DNE")
+			return
+
+		print("Compiling Source Files using given Makefile")
+		os.system("cd " + sourceDir + "&& make")
+
+		for filename in os.listdir(sourceDir):
+			if os.path.isfile(sourceDir+filename) and os.access(sourceDir+filename, os.X_OK):
+				executable = sourceDir+filename
+
+		return
+
 
 	def build_results(self):
 		if os.path.isdir(ResultsFiles):
@@ -89,32 +155,32 @@ class Builder:
 			except:
 				print("Error while executing shutil")
 		os.mkdir(ResultsFiles)
+		return
 
 	def build_loggers(self):
-		self.cpu = CpuLog(3)
-		self.dht = DhtLog(3)
-		self.load = LoadLog(3)
-
-		self.cpu.build_logger()
-		self.dht.build_logger()
-		self.load.build_logger()
+		# TODO Build loggers one at a time, using booleans to determine what to build
+		# if runCpuLog then cpu = CpuLog(), self.logger.append(cpu)
+		return
 
 	def run_loggers(self):
 		global continueLogging
 		continueLogging = True
 		time.sleep(1)
 
-		startTime = time.time()
+		self.startTime = time.time()
 		self.dht.start_logging()
 		self.cpu.start_logging()
 		self.load.start_logging()
 
 		# Do stuff
+		# subprocess.Popen("./"+sourceDir+executable, shell=False)
 		time.sleep(30)
 
 		continueLogging = False
-		endTime = time.time()
-		print("Elapsed time is " + str(endTime - startTime))
+		self.endTime = time.time()
+		self.elapsedTime = self.endTime - self.startTime
+		print("Elapsed time is " + str(self.elapsedTime))
+		return
 # End Builder
 
 class CpuLog:
@@ -156,9 +222,10 @@ class CpuLog:
 
 			self.cpu_data_set.append(cpuTemp)
 			time.sleep(self.cpuInterval)
-		print("CPU List time->temp")
-		print(self.cpu_time_set)
-		print(self.cpu_data_set)
+		if runTest:
+			print("CPU List time->temp")
+			print(self.cpu_time_set)
+			print(self.cpu_data_set)
 
 	def start_logging(self):
 		self.thread.start()
@@ -209,9 +276,10 @@ class DhtLog:
 
 			self.dht_data_set.append(dhtTemp)
 			time.sleep(self.dhtInterval)
-		print("DHT List time->temp")
-		print(self.dht_time_set)
-		print(self.dht_data_set)
+		if runTest:
+			print("DHT List time->temp")
+			print(self.dht_time_set)
+			print(self.dht_data_set)
 
 	def start_logging(self):
 		self.thread.start()
@@ -258,9 +326,10 @@ class LoadLog:
 
 			self.load_data_set.append(load)
 			time.sleep(self.loadInterval)
-		print("Load List time->temp")
-		print(self.load_time_set)
-		print(self.load_data_set)
+		if runTest:
+			print("Load List time->temp")
+			print(self.load_time_set)
+			print(self.load_data_set)
 
 	def start_logging(self):
 		self.thread.start()
@@ -295,13 +364,21 @@ def Cleaner():
 ##
 #
 
-#input_string = input("Please enter the logging systems you want to do, seperated by spaces:-")
-loggers = "" #input_string.split()
+loggers = []
 
 builder = Builder(loggers)
+
+if runConfig:
+	builder.read_config()
+
 builder.build_source_code()
-#builder.build_loggers()
-#builder.run_loggers()
+
+builder.read_params()
+
+
+
+
+
 
 # string control = ""
 # while control is not "quit"
