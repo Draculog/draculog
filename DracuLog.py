@@ -7,10 +7,11 @@
 ##
 # Imports for basic system processes
 import os # used all over for operations
-import sys
+import sys # now used to heat up the cpu
 import time # used to time everything (and to sleep for xInterval)
 import subprocess # used for code execution
 import threading # used to multi thread the loggers/sensors
+import multiprocessing # used to heat up the cpu
 import shutil # used in results folder creation/deletion, install
 import configparser # install using pip
 import re # used to read in params file (stripping whitespace and checking for #
@@ -29,9 +30,15 @@ lowBaseTemp = 55 # Cool down to here
 
 data_list = [] # to store all data in 2D Dictonary structured as such ->
 # data_list = [
-#			{	'run_1':"parameters_1",
-#				'sensor_1_time':[time_data,time_data,...],
-#				'sensor_1_data':[m_data,m_data,m_data,...], ...
+#			{	'run_number':"run x",
+#				'parameters':"parameters",
+#				'executable':"executable file name",
+#				'length':"delta time",
+#				'start time':"start time",
+#				'end time':"end time",
+#				'sensor_1':[(time_data,measure_data),(t_data,m_data),...],
+#				'sensor_2':[(t_data,m_data),(t_data,m_data),...],
+#				...
 #			},
 #			{	'run_2':"parameters_2",
 #					'...':[...],
@@ -126,9 +133,10 @@ class Builder:
 		openParamsFile = open(sourceDir+paramsFile)
 		lines = openParamsFile.readlines()
 		for var in lines:
-			v = re.sub(r"\s+","",var,flags=re.UNICODE)
-			if not v[0] == '#':
-				params_list.append(var.rstrip())
+			if var.strip():
+				v = var.strip()
+				if v[0] != '#':
+					params_list.append(var.rstrip())
 		return
 
 	def build_source_code(self): #TODO retool so I can systematically build executable files with certain params
@@ -155,7 +163,7 @@ class Builder:
 
 		for filename in os.listdir(sourceDir):
 			if os.path.isfile(sourceDir+filename) and os.access(sourceDir+filename, os.X_OK):
-				executable = sourceDir+filename
+				executable = filename
 		return
 
 	def build_results(self):
@@ -181,52 +189,111 @@ class Builder:
 			self.loggers['load'] = load
 		return
 
-	def run_loggers(self): # TODO take in Param used to execute, since we know executable file, sourcedir, but not curr param
-		global continueLogging
-		continueLogging = True
-		print("Starting Tests and Logging using ->")
-		print(params_list)
-		time.sleep(1)
-
+	def rebuild_loggers(self, runNumber):
+		print("Rebuilding Threads")
 		for key in self.loggers:
 			if key != "dht":
-				print("Starting logger for " + key)
-				self.loggers[key].start_logging()
+				self.loggers[key].rebuild_logger(runNumber)
 
-		self.loggers['dht'].poll_dht22()
-		self.startTime =  time.time()
+	def run_loggers(self):
+		print("Running Tests with all params using given source code")
+		run_number = 0
+		for param in params_list:
+			time.sleep(5)
+			global continueLogging
+			continueLogging = True
+			print("Starting Tests and Logging using -> " + param)
 
-		# subprocess.Popen("./"+sourceDir+executable+" "+param, shell=False) # looks like ./sorts bubble 100000
-		time.sleep(15)
+			command = "./"+sourceDir+executable+" "+param
 
-		self.loggers['dht'].poll_dht22()
+			results_file_string = sourceDir+param+"_results.txt"
+			results_file = open(results_file_string, 'w')
 
-		continueLogging = False
-		self.endTime = time.time()
-		self.elapsedTime = self.endTime - self.startTime
-		print("Elapsed time is " + str(self.elapsedTime))
+			if run_number > 0:
+				self.rebuild_loggers(run_number)
+				if runDhtTempLog: # TODO Fix issue where dht's data isn't cleared each run (idk why)
+					self.loggers['dht'].dht_data_set.clear()
 
-		time.sleep(5) # temp for cooling down
+			for key in self.loggers:
+				if key != "dht":
+					print("Starting logger for " + key)
+					self.loggers[key].start_logging()
+				if key == "dht":
+					print("Polling DHT")
+					self.loggers['dht'].poll_dht22()
 
-		self.loggers['dht'].poll_dht22()
+			self.startTime =  time.time()
+			output = subprocess.Popen(command,shell=True, stdout=results_file)
+			output.wait()
+			self.endTime = time.time()
 
-		for key in self.loggers:
-			self.loggers[key].print_data()
+
+			if runDhtTempLog:
+				print("Polling DHT")
+				self.loggers['dht'].poll_dht22()
+
+			continueLogging = False
+			self.elapsedTime = self.endTime - self.startTime
+			print("Elapsed time is " + str(self.elapsedTime))
+
+
+			time.sleep(5) # temp for cooling down
+
+			if runDhtTempLog:
+				print("Polling DHT")
+				self.loggers['dht'].poll_dht22()
+
+			self.compile_data(param, run_number, results_file_string)
+			run_number+=1
+
 		return
 
-	def compile_data(self, param, runNumber):
-		data_list.append({"run_"+str(runNumber):str(param)})
+	def compile_data(self, param, runNumber, results_file):
+		this_run = {}
+		this_run["Run Number"] = runNumber
+		this_run["Parameters"] = param
+		this_run["Executable"] = executable
+		this_run["Results File"] = "NONE" if results_file is None else results_file
+		this_run["Length"] = self.elapsedTime
+		this_run["Start Time"] = self.startTime
+		this_run["End Time"] = self.endTime
 		for key in self.loggers:
-			data_list[runNumber][key+"_t"] = self.loggers[key].get_time_set()
-			data_list[runNumber][key+"_d"] = self.loggers[key].get_data_set()
+			#if key == "dht":
+			#	print("Checking DHT Values")
+			#	print(self.loggers[key].get_data_set())
+			#print("Appending " + key + " data to Dictonary")
+			#print("Adding Data for " + key + str(runNumber) +  " that looks like ")
+			#print(self.loggers[key].get_data_set())
+			this_run[key] = self.loggers[key].get_data_set().copy()
+			#print("Checking if appended correctly for " + key+str(runNumber))
+			#print(this_run[key+str(runNumber)])
+
+		global data_list
+		data_list.append(this_run)
+
+		self.print_data_list()
+
 		return
+
+	def print_data_list(self):
+		for dict in data_list:
+			print(dict)
+
+	def warm_up(self, bias):
+		0 if bias is None else bias
+		while CPUTemperature.temperature() < highBaseTemp:
+			print("TOO WARM")
+
+	def cool_down(self, bias):
+		0 if bias is None else bias
+		while CPUTemperature.temperature() > lowBaseTemp:
+			print("TOO COLD")
 
 # End Builder
 
 class CpuLog:
 # Start CpuLog
 	cpu_data_set = []
-	cpu_time_set = []
 	success = 0
 	failure = 0
 
@@ -242,19 +309,17 @@ class CpuLog:
 				#tempfile.close()
 				#cpuTemp = cpuTempRaw / 1000
 				cpuTemp = self.cpu.temperature
-				self.cpu_time_set.append(time.time())
-
 			except RunTimeError:
 				self.failure+=1
 				cpuTemp=0.0
 				pass
-
+			this_time = time.time()
 			if cpuTemp is not None:
 				self.success+=1
 			else:
 				self.failure+=1
 				cpuTemp=0.00
-			self.cpu_data_set.append(cpuTemp)
+			self.cpu_data_set.append( (this_time,cpuTemp) )
 			time.sleep(self.cpuInterval)
 		return
 
@@ -263,28 +328,24 @@ class CpuLog:
 
 	def build_logger(self):
 		self.thread = threading.Thread(target=self.log, name="CpuLogger")
+	def rebuild_logger(self,runNumber):
+		self.thread = threading.Thread(target=self.log, name="CpuLogger"+str(runNumber))
+		self.cpu_data_set.clear()
 
 	def print_data(self):
 		print("==========CPU==========")
 		print("Success: " + str(self.success) + " Failures: " + str(self.failure))
-		print("Times: ")
-		print(self.cpu_time_set)
 		print("Measures: ")
 		print(self.cpu_data_set)
 
-	def get_time_set(self):
-		return self.cpu_time_set
-
 	def get_data_set(self):
 		return self.cpu_data_set
-
 
 # End CpuLog
 
 class DhtLog:
 # Start DhtLog
 	dht_data_set = []
-	dht_time_set = []
 	success = 0
 	failure = 0
 
@@ -300,17 +361,17 @@ class DhtLog:
 		while continueLogging:
 			try:
 				dhtTemp = self.DHT_SENSOR.temperature
-				self.dht_time_set.append(time.time())
 			except RuntimeError:
 				self.failure+=1
 				dhtTemp=0.0
 				pass
+			this_time = time.time()
 			if dhtTemp is not None:
 				self.success+=1
 			else:
 				self.failure+=1
 				dhtTemp=0.00
-			self.dht_data_set.append(dhtTemp)
+			self.dht_data_set.append( (this_time,dhtTemp) )
 			time.sleep(self.dhtInterval)
 		return
 
@@ -319,32 +380,32 @@ class DhtLog:
 
 	def build_logger(self):
 		self.thread = threading.Thread(target=self.log, name="DhtLogger")
+	def rebuild_logger(self,runNumber):
+		self.thread = threading.Thread(target=self.log, name="DhtLogger"+str(runNumber))
+		self.dht_data_set.clear()
 
 	def poll_dht22(self):
 		try:
 			dhtTemp = self.DHT_SENSOR.temperature
-			self.dht_time_set.append(time.time())
 		except RuntimeError:
 			self.failure+=1
 			dhtTemp=0.0
 			pass
+		this_time = time.time()
 		if dhtTemp is not None:
+			print("Polled a temp of " + str(dhtTemp))
 			self.success+=1
 		else:
 			self.failure+=1
 			dhtTemp=0.00
-		self.dht_data_set.append(dhtTemp)
+		self.dht_data_set.append( (this_time,dhtTemp) )
+		time.sleep(2)
 
 	def print_data(self):
 		print("==========DHT==========")
 		print("Success: " + str(self.success) + " Failures: " + str(self.failure))
-		print("Times: ")
-		print(self.dht_time_set)
 		print("Measures: ")
 		print(self.dht_data_set)
-
-	def get_time_set(self):
-		return self.dht_time_set
 
 	def get_data_set(self):
 		return self.dht_data_set
@@ -354,7 +415,6 @@ class DhtLog:
 class LoadLog:
 # Start LoadLog
 	load_data_set = []
-	load_time_set = []
 	success = 0
 	failure = 0
 
@@ -367,18 +427,17 @@ class LoadLog:
 			try:
 				load_list = os.getloadavg()
 				load = load_list[0]
-				self.load_time_set.append(time.time())
 			except IndexError:
 				pass
 			except RunTimeError:
 				pass
-
+			this_time = time.time()
 			if load is not None:
 				self.success+=1
 			else:
 				self.failure+=1
 
-			self.load_data_set.append(load)
+			self.load_data_set.append( (this_time,load) )
 			time.sleep(self.loadInterval)
 		return
 
@@ -387,46 +446,46 @@ class LoadLog:
 
 	def build_logger(self):
 		self.thread = threading.Thread(target=self.log, name="LoadLogger")
+	def rebuild_logger(self,runNumber):
+		self.thread = threading.Thread(target=self.log, name="LoadLogger"+str(runNumber))
+		self.load_data_set.clear()
 
 	def print_data(self):
 		print("==========LOAD==========")
 		print("Success: " + str(self.success) + " Failures: " + str(self.failure))
-		print("Times: ")
-		print(self.load_time_set)
 		print("Measures: ")
 		print(self.load_data_set)
-
-	def get_time_set(self):
-		return self.load_time_set
 
 	def get_data_set(self):
 		return self.load_data_set
 
 # End LoadLog
 
+class MakerHawk:
+# Start MakerHawk
+	hawk_data_set = []
 
+	def print_data(self):
+		print("==========HAWK ENERGY==========")
+		print("Measures: ")
+		print(self.hawk_data_set)
 
+	def get_data_set(self):
+		return self.hawk_data_set
+
+# End MakerHawk
+
+class Log4:
+# Start Log4
+	log4_data_set = []
+
+	def get_data_set(self):
+		return self.log4_data_set
+# End Log4
 
 ### Functions
 ##
 #
-
-def RunTests():
-	print("Running Desired Loggers and Tests!")
-	return
-
-def WarmUp():
-	print("Warm Up")
-	return
-
-def CoolDown():
-	print("Cool Down")
-	return
-
-def Cleaner():
-	print("CLEANER")
-	return;
-
 
 ### Main Execution
 ##
@@ -443,9 +502,8 @@ builder.build_source_code()
 
 builder.build_loggers()
 
+#builder.test()
 builder.run_loggers()
-
-builder.compile_data(params_list[0],0)
 
 print(data_list)
 
