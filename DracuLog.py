@@ -25,8 +25,7 @@ import serial # install
 ### Global Variables
 ##
 # Basic Global Variables
-highBaseTemp = 60 # Warm up to here
-lowBaseTemp = 55 # Cool down to here
+baselineTemp = 60
 
 data_list = [] # to store all data in 2D Dictonary structured as such ->
 # data_list = [
@@ -95,7 +94,7 @@ class Builder:
 		self.loggers = {}
 
 	def read_config(self):
-		global sourceDir,paramsFile,controlTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
+		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
 		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
 		configReader = configparser.ConfigParser()
@@ -103,7 +102,9 @@ class Builder:
 
 		sourceDir = configReader.get("Parameters", "SourceDir")
 		paramsFile = configReader.get("Parameters", "ParamsFile")
+
 		controlTemp = configReader.getboolean("Parameters", "TempControl")
+		baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
 
 		runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
 		cpuInterval = configReader.getint("Parameters", "CpuInterval")
@@ -120,6 +121,12 @@ class Builder:
 		useLog4 = configReader.getboolean("Parameters", "Log4")
 
 		runClean = configReader.getboolean("Parameters", "CleanData")
+
+		return
+
+	def get_configs(self):
+		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
+		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
 		return
 
@@ -166,15 +173,6 @@ class Builder:
 				executable = filename
 		return
 
-	def build_results(self):
-		if os.path.isdir(ResultsFiles):
-			try:
-				shutil.rmtree(ResultsFiles)
-			except:
-				print("Error while executing shutil")
-		os.mkdir(ResultsFiles)
-		return
-
 	def build_loggers(self):
 		if runCpuTempLog:
 			cpu = CpuLog(cpuInterval)
@@ -187,6 +185,20 @@ class Builder:
 			load = LoadLog(loadInterval)
 			load.build_logger()
 			self.loggers['load'] = load
+		if runEnergyLog:
+			if useMakerHawk:
+				pass
+			if useLog4:
+				pass
+		return
+
+	def count_down(self, timelimit):
+		print("Starting count down (click reset logs when count down ends)")
+		i = timelimit
+		while i >= 0:
+			print("Starting in " + str(i))
+			i-=1
+			time.sleep(1)
 		return
 
 	def rebuild_loggers(self, runNumber):
@@ -198,6 +210,10 @@ class Builder:
 	def run_loggers(self):
 		print("Running Tests with all params using given source code")
 		run_number = 0
+
+		if runEnergyLog and useMakerHawk:
+			self.count_down(5)
+
 		for param in params_list:
 			time.sleep(5)
 			global continueLogging
@@ -222,6 +238,8 @@ class Builder:
 					print("Polling DHT")
 					self.loggers['dht'].poll_dht22()
 
+			
+
 			self.startTime =  time.time()
 			output = subprocess.Popen(command,shell=True, stdout=results_file)
 			output.wait()
@@ -236,8 +254,7 @@ class Builder:
 			self.elapsedTime = self.endTime - self.startTime
 			print("Elapsed time is " + str(self.elapsedTime))
 
-
-			time.sleep(5) # temp for cooling down
+			self.cool_down()
 
 			if runDhtTempLog:
 				print("Polling DHT")
@@ -254,40 +271,61 @@ class Builder:
 		this_run["Parameters"] = param
 		this_run["Executable"] = executable
 		this_run["Results File"] = "NONE" if results_file is None else results_file
-		this_run["Length"] = self.elapsedTime
+		this_run["Delta Time"] = self.elapsedTime
 		this_run["Start Time"] = self.startTime
 		this_run["End Time"] = self.endTime
+		this_run["Cooldown Delta"] = self.cooldownDelta
+		this_run["Cooldown Start"] = self.cooldownStart
+		this_run["Cooldown End"] = self.cooldownEnd
+		this_run["Warmup Delta"] = self.warmupDelta
+		this_run["Warmup Start"] = self.warmupStart
+		this_run["Warmup End"] = self.warmupEnd
 		for key in self.loggers:
-			#if key == "dht":
-			#	print("Checking DHT Values")
-			#	print(self.loggers[key].get_data_set())
-			#print("Appending " + key + " data to Dictonary")
-			#print("Adding Data for " + key + str(runNumber) +  " that looks like ")
-			#print(self.loggers[key].get_data_set())
 			this_run[key] = self.loggers[key].get_data_set().copy()
-			#print("Checking if appended correctly for " + key+str(runNumber))
-			#print(this_run[key+str(runNumber)])
 
 		global data_list
 		data_list.append(this_run)
-
-		self.print_data_list()
-
 		return
 
 	def print_data_list(self):
 		for dict in data_list:
 			print(dict)
 
-	def warm_up(self, bias):
-		0 if bias is None else bias
-		while CPUTemperature.temperature() < highBaseTemp:
-			print("TOO WARM")
+	def test(self):
+		print("Testing Warm Up Code")
+		self.warm_up()
 
-	def cool_down(self, bias):
-		0 if bias is None else bias
-		while CPUTemperature.temperature() > lowBaseTemp:
-			print("TOO COLD")
+	def round_robin(self):
+		count = 0
+		while CPUTemperature().temperature <= (baselineTemp):
+			if count % 100 == 0:
+				print("Current temp is " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp))
+			number = 0
+			if number >= sys.maxsize:
+				number = 0
+			else:
+				number = number + 1
+			count+=1
+
+	def warm_up(self):
+		self.warmupStart = time.time()
+		process_count = 1
+		while process_count <= multiprocessing.cpu_count():
+			process_not_to_be_seen_again = multiprocessing.Process(target=self.round_robin)
+			process_not_to_be_seen_again.start()
+			process_count+=1
+
+		self.warmupEnd = time.time()
+		self.warmupDelta = self.warmupEnd - self.warmupStart
+		print("Delta Warm Up time is " + str(self.warmupDelta))
+
+	def cool_down(self):
+		self.cooldownStart = time.time()
+		while CPUTemperature().temperature > (baselineTemp - 3):
+			print("TOO WARM, COOLING " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp - 3))
+			time.sleep(5)
+		self.cooldownEnd = time.time()
+		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
 
 # End Builder
 
@@ -393,7 +431,7 @@ class DhtLog:
 			pass
 		this_time = time.time()
 		if dhtTemp is not None:
-			print("Polled a temp of " + str(dhtTemp))
+			#print("Polled a temp of " + str(dhtTemp))
 			self.success+=1
 		else:
 			self.failure+=1
@@ -495,6 +533,8 @@ builder = Builder()
 
 if runConfig:
 	builder.read_config()
+else:
+	builder.get_configs()
 
 builder.read_params()
 
@@ -502,8 +542,8 @@ builder.build_source_code()
 
 builder.build_loggers()
 
-#builder.test()
-builder.run_loggers()
+builder.test()
+#builder.run_loggers()
 
 print(data_list)
 
