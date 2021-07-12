@@ -128,6 +128,25 @@ class Builder:
 		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
 		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
+		controlTemp = boolean(input("Please enter if you want to use a baseline temp: "))
+		baselineTemp = int(input("Please enter the baseline temp: "))
+
+		runCpuTempLog = boolean(input("Please enter if you want to measure CPU Temps: "))
+		cpuInterval = int(input("Please enter the CPU polling interval: "))
+
+		runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
+		dhtInterval = configReader.getint("Parameters", "DhtInterval")
+
+		runLoadLog = configReader.getboolean("Parameters", "LoadLog")
+		loadInterval = configReader.getint("Parameters", "LoadInterval")
+
+		runEnergyLog = configReader.getboolean("Parameters", "EnergyLog")
+		energyInterval = configReader.getint("Parameters", "EnergyInterval")
+		useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
+		useLog4 = configReader.getboolean("Parameters", "Log4")
+
+		runClean = configReader.getboolean("Parameters", "CleanData")
+
 		return
 
 	def read_params(self):
@@ -227,7 +246,7 @@ class Builder:
 
 			if run_number > 0:
 				self.rebuild_loggers(run_number)
-				if runDhtTempLog: # TODO Fix issue where dht's data isn't cleared each run (idk why)
+				if runDhtTempLog: # TODO Hot Fix issue where dht's data isn't cleared each run (idk why)
 					self.loggers['dht'].dht_data_set.clear()
 
 			for key in self.loggers:
@@ -238,7 +257,7 @@ class Builder:
 					print("Polling DHT")
 					self.loggers['dht'].poll_dht22()
 
-			
+			self.warmup()
 
 			self.startTime =  time.time()
 			output = subprocess.Popen(command,shell=True, stdout=results_file)
@@ -298,8 +317,6 @@ class Builder:
 	def round_robin(self):
 		count = 0
 		while CPUTemperature().temperature <= (baselineTemp):
-			if count % 100 == 0:
-				print("Current temp is " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp))
 			number = 0
 			if number >= sys.maxsize:
 				number = 0
@@ -542,8 +559,8 @@ builder.build_source_code()
 
 builder.build_loggers()
 
-builder.test()
-#builder.run_loggers()
+#builder.test()
+builder.run_loggers()
 
 print(data_list)
 
