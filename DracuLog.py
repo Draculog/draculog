@@ -35,6 +35,10 @@ data_list = [] # to store all data in 2D Dictonary structured as such ->
 #				'length':"delta time",
 #				'start time':"start time",
 #				'end time':"end time",
+#				'other deltas':"other deltas",
+#				'other start times':"other start times",
+#				'other end times':"other end times",
+#				...,
 #				'sensor_1':[(time_data,measure_data),(t_data,m_data),...],
 #				'sensor_2':[(t_data,m_data),(t_data,m_data),...],
 #				...
@@ -69,6 +73,7 @@ energyInterval = 2
 sourceDir = "Source/"
 paramsFile = "file"
 executable = "file"
+csvFile = "file"
 
 ### Pre Execution
 ##
@@ -94,14 +99,15 @@ class Builder:
 		self.loggers = {}
 
 	def read_config(self):
-		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
-		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
+		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,
+		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
 		configReader = configparser.ConfigParser()
 		configReader.read("ReadMe.ini")
 
 		sourceDir = configReader.get("Parameters", "SourceDir")
 		paramsFile = configReader.get("Parameters", "ParamsFile")
+		csvFile = configReader.get("Parameters", "CsvFile")
 
 		controlTemp = configReader.getboolean("Parameters", "TempControl")
 		baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
@@ -128,14 +134,14 @@ class Builder:
 		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
 		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
-		controlTemp = boolean(input("Please enter if you want to use a baseline temp: "))
+		controlTemp = distutils.util.strtobool(input("Please enter if you want to use a baseline temp: "))
 		baselineTemp = int(input("Please enter the baseline temp: "))
 
-		runCpuTempLog = boolean(input("Please enter if you want to measure CPU Temps: "))
+		runCpuTempLog = distutils.util.strtobool(input("Do you want to measure CPU Temps? Y/N: "))
 		cpuInterval = int(input("Please enter the CPU polling interval: "))
 
-		runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
-		dhtInterval = configReader.getint("Parameters", "DhtInterval")
+		runDhtTempLog = distutils.util.strtobool(input("Do you want to measure room temp? Y/N:  "))
+		dhtInterval = int(input("Please enter the DHT polling interval: "))
 
 		runLoadLog = configReader.getboolean("Parameters", "LoadLog")
 		loadInterval = configReader.getint("Parameters", "LoadInterval")
@@ -231,7 +237,7 @@ class Builder:
 		run_number = 0
 
 		if runEnergyLog and useMakerHawk:
-			self.count_down(5)
+			self.count_down(10)
 
 		for param in params_list:
 			time.sleep(5)
@@ -290,9 +296,9 @@ class Builder:
 		this_run["Parameters"] = param
 		this_run["Executable"] = executable
 		this_run["Results File"] = "NONE" if results_file is None else results_file
-		this_run["Delta Time"] = self.elapsedTime
-		this_run["Start Time"] = self.startTime
-		this_run["End Time"] = self.endTime
+		this_run["Script Delta"] = self.elapsedTime
+		this_run["Script Start"] = self.startTime
+		this_run["Script End"] = self.endTime
 		this_run["Cooldown Delta"] = self.cooldownDelta
 		this_run["Cooldown Start"] = self.cooldownStart
 		this_run["Cooldown End"] = self.cooldownEnd
@@ -305,14 +311,6 @@ class Builder:
 		global data_list
 		data_list.append(this_run)
 		return
-
-	def print_data_list(self):
-		for dict in data_list:
-			print(dict)
-
-	def test(self):
-		print("Testing Warm Up Code")
-		self.warm_up()
 
 	def round_robin(self):
 		count = 0
@@ -343,6 +341,21 @@ class Builder:
 			time.sleep(5)
 		self.cooldownEnd = time.time()
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
+
+	def data_to_csv(self):
+		csvFileString = sourceDir+csvFile
+		
+		return
+
+	def print_data_list(self):
+		for dict in data_list:
+			for key in dict:
+				print(key + str(dict[key]))
+			print('\n')
+		return
+
+
+
 
 # End Builder
 
@@ -562,7 +575,10 @@ builder.build_loggers()
 #builder.test()
 builder.run_loggers()
 
-print(data_list)
+if cleanData:
+	builder.data_to_csv()
+else:
+	print(data_list)
 
 
 # string control = ""
