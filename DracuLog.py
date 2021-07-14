@@ -3,6 +3,9 @@
 ##
 #
 
+#TODO impliment second cleaner script that is called from this script at the end, passing in 3 csv's (possibly)
+# one for the cpu/dht/load/time raw data, one for volts and one for amps
+
 ### Imports
 ##
 # Imports for basic system processes
