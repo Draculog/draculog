@@ -67,10 +67,11 @@ runTest = True
 runConfig = False
 
 # Variables to read at execution
-cpuInterval = 1
-dhtInterval = 2
-loadInterval = 5
-energyInterval = 2
+cpuInterval = 6
+dhtInterval = 6
+loadInterval = 6
+energyInterval = 6
+timeInterval = 6
 
 # Grab Code from "/Source/" folder so this should be typed as "/Source/codeToRun"
 sourceDir = "Source/"
@@ -202,17 +203,21 @@ class Builder:
 		return
 
 	def build_loggers(self):
+		timeLog = TimeLog(timeInterval)
+		timeLog.build_logger()
+		self.loggers['time'] = timeLog
+
 		if runCpuTempLog:
 			cpu = CpuLog(cpuInterval)
 			cpu.build_logger()
 			self.loggers['cpu'] = cpu
-		if runDhtTempLog:
-			dht = DhtLog()
-			self.loggers['dht'] = dht
 		if runLoadLog:
 			load = LoadLog(loadInterval)
 			load.build_logger()
 			self.loggers['load'] = load
+		if runDhtTempLog:
+			dht = DhtLog()
+			self.loggers['dht'] = dht
 		if runEnergyLog:
 			if useMakerHawk:
 				pass
@@ -295,19 +300,19 @@ class Builder:
 
 	def compile_data(self, param, runNumber, results_file):
 		this_run = {}
-		this_run["Run Number"] = runNumber
-		this_run["Parameters"] = param
-		this_run["Executable"] = executable
+		this_run["Run Number"] = str(runNumber)
+		this_run["Parameters"] = str(param)
+		this_run["Executable"] = str(executable)
 		this_run["Results File"] = "NONE" if results_file is None else results_file
-		this_run["Script Delta"] = self.elapsedTime
-		this_run["Script Start"] = self.startTime
-		this_run["Script End"] = self.endTime
-		this_run["Cooldown Delta"] = self.cooldownDelta
-		this_run["Cooldown Start"] = self.cooldownStart
-		this_run["Cooldown End"] = self.cooldownEnd
-		this_run["Warmup Delta"] = self.warmupDelta
-		this_run["Warmup Start"] = self.warmupStart
-		this_run["Warmup End"] = self.warmupEnd
+		this_run["Script Delta"] = str(self.elapsedTime)
+		this_run["Script Start"] = str(self.startTime)
+		this_run["Script End"] = str(self.endTime)
+		this_run["Cooldown Delta"] = str(self.cooldownDelta)
+		this_run["Cooldown Start"] = str(self.cooldownStart)
+		this_run["Cooldown End"] = str(self.cooldownEnd)
+		this_run["Warmup Delta"] = str(self.warmupDelta)
+		this_run["Warmup Start"] = str(self.warmupStart)
+		this_run["Warmup End"] = str(self.warmupEnd)
 		for key in self.loggers:
 			this_run[key] = self.loggers[key].get_data_set().copy()
 
@@ -346,8 +351,33 @@ class Builder:
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
 
 	def data_to_csv(self):
-		csvFileString = sourceDir+csvFile
-		
+		# TODO Make CSV File for raw data using data_list list of dicts
+		csvFileName = sourceDir+csvFile
+		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File"]
+		time_header_keys = ["Script Delta", "Script Start", "Script End",
+					"Cooldown Delta", "Cooldown Start", "Cooldown End",
+					"Warmup Delta", "Warmup Start", "Warmup End"]
+		header_row = []
+		time_row = []
+		with open(csvFileName, 'w') as csvFile:
+			csvWriter = csv.writer(csvFile)
+			for dict in data_list:
+				header_row.clear()
+				time_row.clear()
+				for header in basic_header_keys:
+					header_row.append(header)
+					header_row.append(dict[header])
+				for time in time_header_keys:
+					time_row.append(time)
+					time_row.append(dict[time])
+				csvWriter.writerow(header_row)
+				csvWriter.writerow(time_row)
+
+				data_header = list(self.logger.keys())
+				csvWriter.writerow(data_header)
+
+				for data in data_header:
+					
 		return
 
 	def print_data_list(self):
@@ -361,6 +391,32 @@ class Builder:
 
 
 # End Builder
+
+class TimeLog:
+# Start TimeLog
+	time_set = []
+
+	def __init__(self, timeInterval):
+		self.timeInterval = timeInterval
+
+	def log(self):
+		while continueLogging:
+			self.time_set.append(time.time())
+			time.sleep(self.timeInterval)
+		return
+
+	def start_logging(self):
+		self.thread.start()
+
+	def build_logger(self):
+		self.thread = threading.Thread(target=self.log, name="TimeLogger")
+
+	def rebuild_logger(self,runNumber):
+		self.thread = threading.Thread(target=self.log, name="TimeLogger"+str(runNumber))
+		self.time_set.clear()
+
+
+# End TimeLog
 
 class CpuLog:
 # Start CpuLog
