@@ -18,6 +18,7 @@ import multiprocessing # used to heat up the cpu
 import shutil # used in results folder creation/deletion, install
 import configparser # install using pip
 import re # used to read in params file (stripping whitespace and checking for #
+import csv # used for creation of CSV file of raw data
 # Imports for external attachments
 import adafruit_dht # for DHT Sensor, install
 import gpiod # for DHT Sensor, install
@@ -103,7 +104,7 @@ class Builder:
 		self.loggers = {}
 
 	def read_config(self):
-		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,
+		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
 		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
 		configReader = configparser.ConfigParser()
@@ -271,7 +272,7 @@ class Builder:
 					print("Polling DHT")
 					self.loggers['dht'].poll_dht22()
 
-			self.warmup()
+			self.warm_up()
 
 			self.startTime =  time.time()
 			output = subprocess.Popen(command,shell=True, stdout=results_file)
@@ -304,15 +305,16 @@ class Builder:
 		this_run["Parameters"] = str(param)
 		this_run["Executable"] = str(executable)
 		this_run["Results File"] = "NONE" if results_file is None else results_file
-		this_run["Script Delta"] = str(self.elapsedTime)
-		this_run["Script Start"] = str(self.startTime)
-		this_run["Script End"] = str(self.endTime)
-		this_run["Cooldown Delta"] = str(self.cooldownDelta)
-		this_run["Cooldown Start"] = str(self.cooldownStart)
-		this_run["Cooldown End"] = str(self.cooldownEnd)
-		this_run["Warmup Delta"] = str(self.warmupDelta)
-		this_run["Warmup Start"] = str(self.warmupStart)
-		this_run["Warmup End"] = str(self.warmupEnd)
+		this_run["Baseline CPU Temp"] = baselineTemp
+		this_run["Script Delta"] = self.elapsedTime
+		this_run["Script Start"] = self.startTime
+		this_run["Script End"] = self.endTime
+		this_run["Cooldown Delta"] = self.cooldownDelta
+		this_run["Cooldown Start"] = self.cooldownStart
+		this_run["Cooldown End"] = self.cooldownEnd
+		this_run["Warmup Delta"] = self.warmupDelta
+		this_run["Warmup Start"] = self.warmupStart
+		this_run["Warmup End"] = self.warmupEnd
 		for key in self.loggers:
 			this_run[key] = self.loggers[key].get_data_set().copy()
 
@@ -344,16 +346,17 @@ class Builder:
 
 	def cool_down(self):
 		self.cooldownStart = time.time()
-		while CPUTemperature().temperature > (baselineTemp - 3):
+		while round(CPUTemperature().temperature) > (baselineTemp - 3):
 			print("TOO WARM, COOLING " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp - 3))
 			time.sleep(5)
 		self.cooldownEnd = time.time()
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
 
 	def data_to_csv(self):
+		global csvFile
 		# TODO Make CSV File for raw data using data_list list of dicts
 		csvFileName = sourceDir+csvFile
-		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File"]
+		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp"]
 		time_header_keys = ["Script Delta", "Script Start", "Script End",
 					"Cooldown Delta", "Cooldown Start", "Cooldown End",
 					"Warmup Delta", "Warmup Start", "Warmup End"]
@@ -373,11 +376,26 @@ class Builder:
 				csvWriter.writerow(header_row)
 				csvWriter.writerow(time_row)
 
-				data_header = list(self.logger.keys())
+				data_header = list(self.loggers.keys())
 				csvWriter.writerow(data_header)
 
-				for data in data_header:
-					
+				data_row = []
+				times = list(dict["time"])
+				for t in times:
+					data_row.clear()
+					for key in dict:
+						print(key)
+						if key == "time":
+							data_row.append(t)
+							continue
+						if key in basic_header_keys or key in time_header_keys:
+							continue
+						print(key)
+						print("Success: " + str(self.loggers[key].success))
+						for data in dict[key]:
+							if round(data[0]) == round(t):
+								data_row.append(data[1])
+					csvWriter.writerow(data_row)
 		return
 
 	def print_data_list(self):
@@ -401,7 +419,7 @@ class TimeLog:
 
 	def log(self):
 		while continueLogging:
-			self.time_set.append(time.time())
+			self.time_set.append(float(time.time()))
 			time.sleep(self.timeInterval)
 		return
 
@@ -415,6 +433,8 @@ class TimeLog:
 		self.thread = threading.Thread(target=self.log, name="TimeLogger"+str(runNumber))
 		self.time_set.clear()
 
+	def get_data_set(self):
+		return self.time_set
 
 # End TimeLog
 
@@ -446,7 +466,7 @@ class CpuLog:
 			else:
 				self.failure+=1
 				cpuTemp=0.00
-			self.cpu_data_set.append( (this_time,cpuTemp) )
+			self.cpu_data_set.append( (float(this_time),cpuTemp) )
 			time.sleep(self.cpuInterval)
 		return
 
@@ -498,7 +518,7 @@ class DhtLog:
 			else:
 				self.failure+=1
 				dhtTemp=0.00
-			self.dht_data_set.append( (this_time,dhtTemp) )
+			self.dht_data_set.append( (float(this_time),dhtTemp) )
 			time.sleep(self.dhtInterval)
 		return
 
@@ -525,7 +545,7 @@ class DhtLog:
 		else:
 			self.failure+=1
 			dhtTemp=0.00
-		self.dht_data_set.append( (this_time,dhtTemp) )
+		self.dht_data_set.append( (float(this_time),dhtTemp) )
 		time.sleep(2)
 
 	def print_data(self):
@@ -564,7 +584,7 @@ class LoadLog:
 			else:
 				self.failure+=1
 
-			self.load_data_set.append( (this_time,load) )
+			self.load_data_set.append( (float(this_time),load) )
 			time.sleep(self.loadInterval)
 		return
 
@@ -634,7 +654,7 @@ builder.build_loggers()
 #builder.test()
 builder.run_loggers()
 
-if cleanData:
+if runClean:
 	builder.data_to_csv()
 else:
 	print(data_list)
