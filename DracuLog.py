@@ -182,7 +182,7 @@ class Builder:
 
 		if not runConfig:
 			# grab source files from user prompt
-			sourceDir = input("Folder name (foldername/): ")
+			sourceDir = input("Folder name (Source/foldername/): ")
 		else:
 			# grab source files from config.ini
 			print("Grabbed Source Code, building code located at: " + sourceDir)
@@ -317,6 +317,14 @@ class Builder:
 		this_run["Warmup End"] = self.warmupEnd
 		for key in self.loggers:
 			this_run[key] = self.loggers[key].get_data_set().copy()
+		# To Add avg room temp just in case
+		dhtSum = 0.0
+		measures = 0
+		for dhtMeasure in this_run['dht']:
+			if dhtMeasure != 0.0:
+				dhtSum += dhtMeasure[1]
+				measures += 1
+		this_run["Avg Room Temp"] = dhtSum / measures
 
 		global data_list
 		data_list.append(this_run)
@@ -356,56 +364,74 @@ class Builder:
 		global csvFile
 		# TODO Make CSV File for raw data using data_list list of dicts
 		csvFileName = sourceDir+csvFile
-		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp"]
+		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp",
+					"Avg Room Temp"] #, "dht"]
 		time_header_keys = ["Script Delta", "Script Start", "Script End",
 					"Cooldown Delta", "Cooldown Start", "Cooldown End",
 					"Warmup Delta", "Warmup Start", "Warmup End"]
 		header_row = []
 		time_row = []
-		with open(csvFileName, 'w') as csvFile:
+		with open(csvFileName, 'w', newline='') as csvFile:
 			csvWriter = csv.writer(csvFile)
 			for dict in data_list:
 				header_row.clear()
 				time_row.clear()
 				for header in basic_header_keys:
-					header_row.append(header)
+					header_row.append(header + ":")
 					header_row.append(dict[header])
 				for time in time_header_keys:
-					time_row.append(time)
+					time_row.append(time + ":")
 					time_row.append(dict[time])
 				csvWriter.writerow(header_row)
 				csvWriter.writerow(time_row)
-
+				csvWriter.writerow(" ")
 				data_header = list(self.loggers.keys())
 				csvWriter.writerow(data_header)
 
 				data_row = []
 				times = list(dict["time"])
+
+				dhtFlop = False
+				dhtIndex = 0
+
 				for t in times:
 					data_row.clear()
 					for key in dict:
-						print(key)
+						#print(key)
 						if key == "time":
 							data_row.append(t)
 							continue
 						if key in basic_header_keys or key in time_header_keys:
 							continue
-						print(key)
-						print("Success: " + str(self.loggers[key].success))
+						# TODO Make algorithm that only puts out dht data
+						if key == "dht" and dhtIndex < 3 and not dhtFlop:
+							#print(dict[key][dhtIndex])
+							#print(dict[key])
+							data_row.append(dict[key][dhtIndex][1])
+							dhtIndex += 1
+							continue
+						elif key == "dht" and dhtIndex == 3  and not dhtFlop:
+							dhtFlop = True
+							continue
 						for data in dict[key]:
 							if round(data[0]) == round(t):
 								data_row.append(data[1])
+
 					csvWriter.writerow(data_row)
+				csvWriter.writerow(" ")
 		return
 
 	def print_data_list(self):
 		for dict in data_list:
 			for key in dict:
-				print(key + str(dict[key]))
+				print(key + ": " + str(dict[key]))
 			print('\n')
 		return
 
-
+	def combine_energy_data(self):
+		# TODO
+		# something like call python script "cleaner.py"
+		return
 
 
 # End Builder
@@ -657,11 +683,13 @@ builder.run_loggers()
 if runClean:
 	builder.data_to_csv()
 else:
-	print(data_list)
+	builder.print_data_list()
 
+#builder.print_data_list()
 
 # string control = ""
 # while control is not "quit"
 # loop and permutate asking for next permutaion
 # if it is quit end looping
 # if we have said to clean the data, clean the resultant data store in "/Results/"
+
