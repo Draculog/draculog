@@ -19,6 +19,7 @@ import shutil # used in results folder creation/deletion, install
 import configparser # install using pip
 import re # used to read in params file (stripping whitespace and checking for #
 import csv # used for creation of CSV file of raw data
+import shutil # used to copy raw csv's elsewhere
 # Imports for external attachments
 import adafruit_dht # for DHT Sensor, install
 import gpiod # for DHT Sensor, install
@@ -52,7 +53,7 @@ data_list = [] # to store all data in 2D Dictonary structured as such ->
 #					'...':[...], ...
 #			}, ...
 #		]
-
+energy_dict = []
 params_list = []
 
 # Variables to read before execution
@@ -79,6 +80,9 @@ sourceDir = "Source/"
 paramsFile = "file"
 executable = "file"
 csvFile = "file"
+finalCsv = "file"
+voltsFile = "file"
+ampsFile = "file"
 
 ### Pre Execution
 ##
@@ -246,10 +250,10 @@ class Builder:
 		run_number = 0
 
 		if runEnergyLog and useMakerHawk:
-			self.count_down(10)
+			self.count_down(18)
 
 		for param in params_list:
-			time.sleep(5)
+			time.sleep(6)
 			global continueLogging
 			continueLogging = True
 			print("Starting Tests and Logging using -> " + param)
@@ -296,7 +300,9 @@ class Builder:
 
 			self.compile_data(param, run_number, results_file_string)
 			run_number+=1
-
+		print("Done with running tests")
+		if runEnergyLog:
+			print("Stop Energy Measures now and upload volts and watts data to this device in Source Folder")
 		return
 
 	def compile_data(self, param, runNumber, results_file):
@@ -428,9 +434,22 @@ class Builder:
 			print('\n')
 		return
 
-	def combine_energy_data(self):
-		# TODO
-		# something like call python script "cleaner.py"
+	def gather_energy_data(self):
+		global ampsFile, voltsFile, finalCsv
+		if useMakerHawk:
+			# TODO maybe make it so that it's all automatic after a copy is executed? Idk
+			print("You used Makerhawk for energy logging")
+			confirm = input("Press enter when you've finished importing the Volts and Watts csv's.....")
+			if not runConfig:
+				ampsFile = input("Please enter the name of your Amps File: ")
+				voltsFile = input("Please enter the name of your Volts File:" )
+			
+			# TODO
+			# something like call python script "(cleaner.py).combine_func(raw_data.csv, volts.csv, amps.csv)
+			# func call exmp
+			# Cleaner.combine(csvFile, sourceDir, voltsFile, wattsFile)
+		if useLog4:
+			print("You used Log4")
 		return
 
 
@@ -673,19 +692,20 @@ else:
 
 builder.read_params()
 
-builder.build_source_code()
+#builder.build_source_code()
 
-builder.build_loggers()
+#builder.build_loggers()
 
 #builder.test()
-builder.run_loggers()
+#builder.run_loggers()
 
 if runClean:
 	builder.data_to_csv()
 else:
 	builder.print_data_list()
 
-#builder.print_data_list()
+if runEnergyLog:
+	builder.gather_energy_data()
 
 # string control = ""
 # while control is not "quit"
