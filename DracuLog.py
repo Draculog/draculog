@@ -144,7 +144,7 @@ class Manager:
 		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
 		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
-		choice = input("Do you want to have a baseline temp? Y/N: ")
+		choice = input("Do you want to have a baseline temp? Y/N: ").upper()
 		if upper(choice) == "Y" or upper(choice) == "YES":
 			controlTemp = True
 			baselineTemp = int(input("Please enter the baseline temp: "))
@@ -164,18 +164,18 @@ class Manager:
 			dhtInterval = int(input("Please enter the DHT polling interval: "))
 		else:
 			runDhtTempLog = False
-		
+
 		runLoadLog = input("Do you want to measure Loads? Y/N:  ")
 		if upper(choice) == "Y" or upper(choice) == "YES":
 			runLoadLog = True
 			loadInterval = int(input("Please enter the Load polling interval: "))
 		else:
 			runLoadLog = False
-		
+
 		choice = input("Do you want to measure Energy? Y/N:  ")
 		if upper(choice) == "Y" or upper(choice) == "YES":
 			runEnergyLog = True
-			choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: )
+			choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: ")
 			if upper(choice) == "M" or upper(choice) == "MAKERHAWK":
 				useMakerHawk = True
 				useLog4 = False
@@ -189,7 +189,7 @@ class Manager:
 			energyInterval = int(input("Please enter the Energy Polling Interval: "))
 		else:
 			runEnergyLog = False
-	
+
 		choice = input("Do you want to get a CSV? Y/N:  ")
 		if upper(choice) == "Y" or upper(choice) == "YES":
 			runClean = True
@@ -337,9 +337,9 @@ class Manager:
 
 			self.compile_data(param, run_number, results_file_string)
 			run_number+=1
-			
+
 		print("Done with running all tests")
-		
+
 		return
 
 	def compile_data(self, param, runNumber, results_file):
@@ -461,7 +461,7 @@ class Manager:
 					csvWriter.writerow(data_row)
 				csvWriter.writerow(" ")
 		return
-		
+
 	def data_to_final_csv(self):
 		return
 
@@ -487,7 +487,7 @@ class Manager:
 		else:
 			return
 		return
-		
+
 	def combine_energy_data(self):
 		return
 
@@ -781,7 +781,7 @@ class MakerHawk:
 ##
 #
 
-manager = manager()
+manager = Manager()
 
 if runConfig:
 	manager.read_config()
@@ -810,4 +810,4 @@ manager.read_params()
 if runEnergyLog:
 	manager.gather_energy_data()
 	manager.makerhawk.print_data()
-	
+
