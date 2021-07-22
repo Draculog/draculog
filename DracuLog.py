@@ -26,6 +26,7 @@ import gpiod # for DHT Sensor, install
 import board # for DHT Sensor, install
 from gpiozero import CPUTemperature # for CPU Temp, install
 import serial # install
+#import MakerHawkDataCompiler.py
 
 ### Global Variables
 ##
@@ -53,7 +54,7 @@ data_list = [] # to store all data in 2D Dictonary structured as such ->
 #					'...':[...], ...
 #			}, ...
 #		]
-energy_dict = []
+energy_list = []
 params_list = []
 
 # Variables to read before execution
@@ -143,7 +144,11 @@ class Builder:
 		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
 		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
-		controlTemp = distutils.util.strtobool(input("Please enter if you want to use a baseline temp: "))
+		choice = bool(input("Do you want to have a baseline temp? Y/N: "))
+		if upper(choice) == "Y" or upper(choice) == "YES":
+			controlTemp = True
+		else:
+			controlTemp = False
 		baselineTemp = int(input("Please enter the baseline temp: "))
 
 		runCpuTempLog = distutils.util.strtobool(input("Do you want to measure CPU Temps? Y/N: "))
@@ -250,7 +255,8 @@ class Builder:
 		run_number = 0
 
 		if runEnergyLog and useMakerHawk:
-			self.count_down(18)
+			confirm = input("Please get your MakerHawk software ready, then hit enter to start a 10 second countdown.....")
+			self.count_down(10)
 
 		for param in params_list:
 			time.sleep(6)
@@ -410,14 +416,14 @@ class Builder:
 						if key in basic_header_keys or key in time_header_keys:
 							continue
 						# TODO Make algorithm that only puts out dht data
-						if key == "dht" and dhtIndex < 3 and not dhtFlop:
+						if key == "dht" and dhtIndex < 3:
 							#print(dict[key][dhtIndex])
 							#print(dict[key])
 							data_row.append(dict[key][dhtIndex][1])
 							dhtIndex += 1
 							continue
-						elif key == "dht" and dhtIndex == 3  and not dhtFlop:
-							dhtFlop = True
+						elif key == "dht" and dhtIndex == 3:
+							#dhtFlop = True
 							continue
 						for data in dict[key]:
 							if round(data[0]) == round(t):
@@ -435,23 +441,23 @@ class Builder:
 		return
 
 	def gather_energy_data(self):
-		global ampsFile, voltsFile, finalCsv
+		global ampsFile, voltsFile, finalCsv, energy_list
 		if useMakerHawk:
 			# TODO maybe make it so that it's all automatic after a copy is executed? Idk
 			print("You used Makerhawk for energy logging")
+			print("Get ready to move your volts and amps files over to your source dir")
 			confirm = input("Press enter when you've finished importing the Volts and Watts csv's.....")
-			if not runConfig:
-				ampsFile = input("Please enter the name of your Amps File: ")
-				voltsFile = input("Please enter the name of your Volts File:" )
-			
-			# TODO
-			# something like call python script "(cleaner.py).combine_func(raw_data.csv, volts.csv, amps.csv)
-			# func call exmp
-			# Cleaner.combine(csvFile, sourceDir, voltsFile, wattsFile)
-		if useLog4:
-			print("You used Log4")
+			ampsFile = input("Please enter the name of your Amps File: ")
+			voltsFile = input("Please enter the name of your Volts File:" )
+			print("Compiling data from " + ampsFile + " and " + voltsFile)
+			self.makerhawk = MakerHawk(ampsFile, voltsFile)
+			self.makerhawk.compile_energy()
+			self.makerhawk.print_data()
+		else:
+			return
 		return
-
+	def combine_energy_data(self):
+		return
 
 # End Builder
 
@@ -655,25 +661,85 @@ class LoadLog:
 
 class MakerHawk:
 # Start MakerHawk
-	hawk_data_set = []
+	hawk_data_set = {}
+	# Data stored somethig like "[(tick, first, second), (t,f,s),...]
+
+	def __init__(self, ampsFile, voltsFile, source):
+		self.ampsFile = ampsFile
+		self.voltsFile = voltsFile
+		self.source = source
+		return
+
+	def compile_energy(self):
+		self.gather_averaged_amps()
+		self.gather_averaged_volts()
+		self.gather_averaged_watts()
+		return
+
+	def gather_averaged_amps(self):
+		amps_list = []
+		with open(self.ampsFile, 'r') as amps:
+			lineCount = 0
+			ampsReader = csv.DictReader(amps)
+			for measure in ampsReader:
+				if lineCount == 0:
+					lineCount+=1
+					continue
+				avgIndex = 0
+				avgAmps = 0.0
+				while avgIndex < energyInterval:
+					avgAmps += measure[1]
+					avgIndex += 1
+				amps_list.append(avgAmps / energyInterval)
+		self.hawk_data_set['amps'] = amps_list
+		return
+
+	def gather_amps(self):
+		amps_list = []
+		with open(self.ampsFile, 'r') as amps:
+			lineCount = 0
+			ampsReader = csv.DictReader(amps)
+			for measure in ampsReader:
+				if lineCount == 0:
+					lineCount+=1
+					continue
+				amps_list.append(avgAmps)
+		self.hawk_data_set['amps'] = amps_list
+		return
+
+	def gather_averaged_volts(self):
+		voltsAvg = 0.0
+		voltsSum = 0.0
+		voltsCount = 0
+		with open(self.voltsFile, 'r') as volts:
+			lineCount = 0
+			voltsReader = csv.DictReader(volts)
+			for measure in voltsReader:
+				if lineCount == 0:
+					lineCount+=1
+					continue
+				voltsSum += measure[1]
+				voltsCount += 1
+		self.hawk_data_set['volt'] = (voltsSum / voltsCount)
+		return
+
+	def gather_averaged_watts(self):
+		watts_list = []
+		for amps in self.hawk_data_set['amps']:
+			watts_list.append(amps * self.hawk_data_set['volts'])
+		self.hawk_data_set['watt'] = watts_list
+		return
 
 	def print_data(self):
 		print("==========HAWK ENERGY==========")
-		print("Measures: ")
-		print(self.hawk_data_set)
+		for key in self.hawk_data_set:
+			print(key + "======")
+			print(self.hawk_data_set[key])
 
 	def get_data_set(self):
 		return self.hawk_data_set
 
 # End MakerHawk
-
-class Log4:
-# Start Log4
-	log4_data_set = []
-
-	def get_data_set(self):
-		return self.log4_data_set
-# End Log4
 
 ### Functions
 ##
@@ -699,14 +765,14 @@ builder.read_params()
 #builder.test()
 #builder.run_loggers()
 
-if runClean:
-	builder.data_to_csv()
-else:
-	builder.print_data_list()
+#if runClean:
+#	builder.data_to_csv()
+#else:
+#	builder.print_data_list()
 
 if runEnergyLog:
 	builder.gather_energy_data()
-
+	builder.makerhawk.print_energy()
 # string control = ""
 # while control is not "quit"
 # loop and permutate asking for next permutaion
