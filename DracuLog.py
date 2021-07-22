@@ -103,8 +103,8 @@ if len(sys.argv) > 1:
 ##
 #
 
-class Builder:
-# Start Builde
+class Manager:
+# Start Manager
 	def __init__(self):
 		self.loggers = {}
 
@@ -117,7 +117,6 @@ class Builder:
 
 		sourceDir = configReader.get("Parameters", "SourceDir")
 		paramsFile = configReader.get("Parameters", "ParamsFile")
-		csvFile = configReader.get("Parameters", "CsvFile")
 
 		controlTemp = configReader.getboolean("Parameters", "TempControl")
 		baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
@@ -137,36 +136,66 @@ class Builder:
 		useLog4 = configReader.getboolean("Parameters", "Log4")
 
 		runClean = configReader.getboolean("Parameters", "CleanData")
+		csvFile = configReader.get("Parameters", "CsvFile")
 
 		return
 
 	def get_configs(self):
-		global sourceDir,paramsFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog,dhtInterval
-		global runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
+		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
+		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
-		choice = bool(input("Do you want to have a baseline temp? Y/N: "))
+		choice = input("Do you want to have a baseline temp? Y/N: ")
 		if upper(choice) == "Y" or upper(choice) == "YES":
 			controlTemp = True
+			baselineTemp = int(input("Please enter the baseline temp: "))
 		else:
 			controlTemp = False
-		baselineTemp = int(input("Please enter the baseline temp: "))
 
-		runCpuTempLog = distutils.util.strtobool(input("Do you want to measure CPU Temps? Y/N: "))
-		cpuInterval = int(input("Please enter the CPU polling interval: "))
+		choice = input("Do you want to measure CPU Temps? Y/N: ")
+		if upper(choice) == "Y" or upper(choice) == "YES":
+			runCpuTempLog = True
+			cpuInterval = int(input("Please enter the CPU polling interval: "))
+		else:
+			runCpuTempLog = False
 
-		runDhtTempLog = distutils.util.strtobool(input("Do you want to measure room temp? Y/N:  "))
-		dhtInterval = int(input("Please enter the DHT polling interval: "))
-
-		runLoadLog = configReader.getboolean("Parameters", "LoadLog")
-		loadInterval = configReader.getint("Parameters", "LoadInterval")
-
-		runEnergyLog = configReader.getboolean("Parameters", "EnergyLog")
-		energyInterval = configReader.getint("Parameters", "EnergyInterval")
-		useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
-		useLog4 = configReader.getboolean("Parameters", "Log4")
-
-		runClean = configReader.getboolean("Parameters", "CleanData")
-
+		choice = input("Do you want to measure room temp? Y/N: ")
+		if upper(choice) == "Y" or upper(choice) == "YES":
+			runDhtTempLog = True
+			dhtInterval = int(input("Please enter the DHT polling interval: "))
+		else:
+			runDhtTempLog = False
+		
+		runLoadLog = input("Do you want to measure Loads? Y/N:  ")
+		if upper(choice) == "Y" or upper(choice) == "YES":
+			runLoadLog = True
+			loadInterval = int(input("Please enter the Load polling interval: "))
+		else:
+			runLoadLog = False
+		
+		choice = input("Do you want to measure Energy? Y/N:  ")
+		if upper(choice) == "Y" or upper(choice) == "YES":
+			runEnergyLog = True
+			choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: )
+			if upper(choice) == "M" or upper(choice) == "MAKERHAWK":
+				useMakerHawk = True
+				useLog4 = False
+			elif upper(choice) == "L" or upper(choice) == "LOG4":
+				useMakerHawk = False
+				useLog4 = True
+			else:
+				print("Error, wrong choice was selected, choosing Makerhawk instead")
+				useMakerHawk = True
+				useLog4 = False
+			energyInterval = int(input("Please enter the Energy Polling Interval: "))
+		else:
+			runEnergyLog = False
+	
+		choice = input("Do you want to get a CSV? Y/N:  ")
+		if upper(choice) == "Y" or upper(choice) == "YES":
+			runClean = True
+			csvFile = input("Please enter the CSV File name you want: ")
+		else:
+			runClean = False
 		return
 
 	def read_params(self):
@@ -229,9 +258,8 @@ class Builder:
 			dht = DhtLog()
 			self.loggers['dht'] = dht
 		if runEnergyLog:
-			if useMakerHawk:
-				pass
 			if useLog4:
+			#TODO Impliment a log4 sensor, when you have time
 				pass
 		return
 
@@ -255,8 +283,11 @@ class Builder:
 		run_number = 0
 
 		if runEnergyLog and useMakerHawk:
-			confirm = input("Please get your MakerHawk software ready, then hit enter to start a 10 second countdown.....")
-			self.count_down(10)
+			print("Please get your MakerHawk software ready, as there will be a 10 second count down once you hit enter below")
+			print("This is needed to align your Amp's CSV data from your Makerhawk with your other sensor data")
+			print("So make sure you clear the AMPS data/sensor/log in the Makerhawk software first please!")
+			confirm = input("Hit Enter, then a 15 second countdown will start.....")
+			self.count_down(15)
 
 		for param in params_list:
 			time.sleep(6)
@@ -306,9 +337,9 @@ class Builder:
 
 			self.compile_data(param, run_number, results_file_string)
 			run_number+=1
-		print("Done with running tests")
-		if runEnergyLog:
-			print("Stop Energy Measures now and upload volts and watts data to this device in Source Folder")
+			
+		print("Done with running all tests")
+		
 		return
 
 	def compile_data(self, param, runNumber, results_file):
@@ -372,12 +403,11 @@ class Builder:
 		self.cooldownEnd = time.time()
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
 
-	def data_to_csv(self):
+	def data_to_sensor_only_csv(self):
 		global csvFile
-		# TODO Make CSV File for raw data using data_list list of dicts
 		csvFileName = sourceDir+csvFile
 		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp",
-					"Avg Room Temp"] #, "dht"]
+					"Avg Room Temp"]
 		time_header_keys = ["Script Delta", "Script Start", "Script End",
 					"Cooldown Delta", "Cooldown Start", "Cooldown End",
 					"Warmup Delta", "Warmup Start", "Warmup End"]
@@ -415,7 +445,6 @@ class Builder:
 							continue
 						if key in basic_header_keys or key in time_header_keys:
 							continue
-						# TODO Make algorithm that only puts out dht data
 						if key == "dht" and dhtIndex < 3:
 							#print(dict[key][dhtIndex])
 							#print(dict[key])
@@ -432,6 +461,9 @@ class Builder:
 					csvWriter.writerow(data_row)
 				csvWriter.writerow(" ")
 		return
+		
+	def data_to_final_csv(self):
+		return
 
 	def print_data_list(self):
 		for dict in data_list:
@@ -443,7 +475,6 @@ class Builder:
 	def gather_energy_data(self):
 		global ampsFile, voltsFile, finalCsv, energy_list
 		if useMakerHawk:
-			# TODO maybe make it so that it's all automatic after a copy is executed? Idk
 			print("You used Makerhawk for energy logging")
 			print("Get ready to move your volts and amps files over to your source dir")
 			confirm = input("Press enter when you've finished importing the Volts and Watts csv's.....")
@@ -456,10 +487,11 @@ class Builder:
 		else:
 			return
 		return
+		
 	def combine_energy_data(self):
 		return
 
-# End Builder
+# End Manager
 
 class TimeLog:
 # Start TimeLog
@@ -749,33 +781,33 @@ class MakerHawk:
 ##
 #
 
-builder = Builder()
+manager = manager()
 
 if runConfig:
-	builder.read_config()
+	manager.read_config()
 else:
-	builder.get_configs()
+	manager.get_configs()
 
-builder.read_params()
+manager.read_params()
 
-#builder.build_source_code()
+#manager.build_source_code()
 
-#builder.build_loggers()
+#manager.build_loggers()
 
-#builder.test()
-#builder.run_loggers()
+#manager.test()
+#manager.run_loggers()
 
 #if runClean:
-#	builder.data_to_csv()
+#	if runEnergyLog && useMakerHawk:
+#		manager.gather_energy_data()
+#		manager.makerhawk.print_data()
+#		manager.data_to_final_csv()
+#	else:
+#		manager.data_to_sensor_only_csv()
 #else:
-#	builder.print_data_list()
+#	manager.print_data_list()
 
 if runEnergyLog:
-	builder.gather_energy_data()
-	builder.makerhawk.print_energy()
-# string control = ""
-# while control is not "quit"
-# loop and permutate asking for next permutaion
-# if it is quit end looping
-# if we have said to clean the data, clean the resultant data store in "/Results/"
-
+	manager.gather_energy_data()
+	manager.makerhawk.print_data()
+	
