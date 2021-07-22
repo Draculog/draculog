@@ -145,41 +145,41 @@ class Manager:
 		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
 		choice = input("Do you want to have a baseline temp? Y/N: ").upper()
-		if upper(choice) == "Y" or upper(choice) == "YES":
+		if choice == "Y" or choice == "YES":
 			controlTemp = True
 			baselineTemp = int(input("Please enter the baseline temp: "))
 		else:
 			controlTemp = False
 
-		choice = input("Do you want to measure CPU Temps? Y/N: ")
-		if upper(choice) == "Y" or upper(choice) == "YES":
+		choice = input("Do you want to measure CPU Temps? Y/N: ").upper()
+		if choice == "Y" or choice == "YES":
 			runCpuTempLog = True
 			cpuInterval = int(input("Please enter the CPU polling interval: "))
 		else:
 			runCpuTempLog = False
 
-		choice = input("Do you want to measure room temp? Y/N: ")
-		if upper(choice) == "Y" or upper(choice) == "YES":
+		choice = input("Do you want to measure room temp? Y/N: ").upper()
+		if choice == "Y" or choice == "YES":
 			runDhtTempLog = True
 			dhtInterval = int(input("Please enter the DHT polling interval: "))
 		else:
 			runDhtTempLog = False
 
-		runLoadLog = input("Do you want to measure Loads? Y/N:  ")
-		if upper(choice) == "Y" or upper(choice) == "YES":
+		runLoadLog = input("Do you want to measure Loads? Y/N:  ").upper()
+		if choice == "Y" or choice == "YES":
 			runLoadLog = True
 			loadInterval = int(input("Please enter the Load polling interval: "))
 		else:
 			runLoadLog = False
 
-		choice = input("Do you want to measure Energy? Y/N:  ")
-		if upper(choice) == "Y" or upper(choice) == "YES":
+		choice = input("Do you want to measure Energy? Y/N:  ").upper()
+		if choice == "Y" or choice == "YES":
 			runEnergyLog = True
 			choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: ")
-			if upper(choice) == "M" or upper(choice) == "MAKERHAWK":
+			if choice == "M" or choice == "MAKERHAWK":
 				useMakerHawk = True
 				useLog4 = False
-			elif upper(choice) == "L" or upper(choice) == "LOG4":
+			elif choice == "L" or choice == "LOG4":
 				useMakerHawk = False
 				useLog4 = True
 			else:
@@ -190,8 +190,8 @@ class Manager:
 		else:
 			runEnergyLog = False
 
-		choice = input("Do you want to get a CSV? Y/N:  ")
-		if upper(choice) == "Y" or upper(choice) == "YES":
+		choice = input("Do you want to get a CSV? Y/N:  ").upper()
+		if choice == "Y" or choice == "YES":
 			runClean = True
 			csvFile = input("Please enter the CSV File name you want: ")
 		else:
