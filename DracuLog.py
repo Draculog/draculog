@@ -20,6 +20,8 @@ import configparser # install using pip
 import re # used to read in params file (stripping whitespace and checking for #
 import csv # used for creation of CSV file of raw data
 import shutil # used to copy raw csv's elsewhere
+#import numpy # needed for pandas
+#import pandas as pd # used to transform  a txt file (from makerhawk) into a csv
 # Imports for external attachments
 import adafruit_dht # for DHT Sensor, install
 import gpiod # for DHT Sensor, install
@@ -108,94 +110,89 @@ class Manager:
 	def __init__(self):
 		self.loggers = {}
 
-	def read_config(self):
+	def read_configs(self):
 		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
 		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
-		configReader = configparser.ConfigParser()
-		configReader.read("ReadMe.ini")
+		if runConfig:
+			configReader = configparser.ConfigParser()
+			configReader.read("ReadMe.ini")
 
-		sourceDir = configReader.get("Parameters", "SourceDir")
-		paramsFile = configReader.get("Parameters", "ParamsFile")
+			sourceDir = configReader.get("Parameters", "SourceDir")
+			paramsFile = configReader.get("Parameters", "ParamsFile")
 
-		controlTemp = configReader.getboolean("Parameters", "TempControl")
-		baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
+			controlTemp = configReader.getboolean("Parameters", "TempControl")
+			baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
 
-		runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
-		cpuInterval = configReader.getint("Parameters", "CpuInterval")
+			runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
+			cpuInterval = configReader.getint("Parameters", "CpuInterval")
 
-		runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
-		dhtInterval = configReader.getint("Parameters", "DhtInterval")
+			runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
+			dhtInterval = configReader.getint("Parameters", "DhtInterval")
 
-		runLoadLog = configReader.getboolean("Parameters", "LoadLog")
-		loadInterval = configReader.getint("Parameters", "LoadInterval")
+			runLoadLog = configReader.getboolean("Parameters", "LoadLog")
+			loadInterval = configReader.getint("Parameters", "LoadInterval")
 
-		runEnergyLog = configReader.getboolean("Parameters", "EnergyLog")
-		energyInterval = configReader.getint("Parameters", "EnergyInterval")
-		useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
-		useLog4 = configReader.getboolean("Parameters", "Log4")
+			runEnergyLog = configReader.getboolean("Parameters", "EnergyLog")
+			energyInterval = configReader.getint("Parameters", "EnergyInterval")
+			useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
+			useLog4 = configReader.getboolean("Parameters", "Log4")
 
-		runClean = configReader.getboolean("Parameters", "CleanData")
-		csvFile = configReader.get("Parameters", "CsvFile")
-
-		return
-
-	def get_configs(self):
-		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
-		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
-
-		choice = input("Do you want to have a baseline temp? Y/N: ").upper()
-		if choice == "Y" or choice == "YES":
-			controlTemp = True
-			baselineTemp = int(input("Please enter the baseline temp: "))
+			runClean = configReader.getboolean("Parameters", "CleanData")
+			csvFile = configReader.get("Parameters", "CsvFile")
 		else:
-			controlTemp = False
-
-		choice = input("Do you want to measure CPU Temps? Y/N: ").upper()
-		if choice == "Y" or choice == "YES":
-			runCpuTempLog = True
-			cpuInterval = int(input("Please enter the CPU polling interval: "))
-		else:
-			runCpuTempLog = False
-
-		choice = input("Do you want to measure room temp? Y/N: ").upper()
-		if choice == "Y" or choice == "YES":
-			runDhtTempLog = True
-			dhtInterval = int(input("Please enter the DHT polling interval: "))
-		else:
-			runDhtTempLog = False
-
-		runLoadLog = input("Do you want to measure Loads? Y/N:  ").upper()
-		if choice == "Y" or choice == "YES":
-			runLoadLog = True
-			loadInterval = int(input("Please enter the Load polling interval: "))
-		else:
-			runLoadLog = False
-
-		choice = input("Do you want to measure Energy? Y/N:  ").upper()
-		if choice == "Y" or choice == "YES":
-			runEnergyLog = True
-			choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: ")
-			if choice == "M" or choice == "MAKERHAWK":
-				useMakerHawk = True
-				useLog4 = False
-			elif choice == "L" or choice == "LOG4":
-				useMakerHawk = False
-				useLog4 = True
+			choice = input("Do you want to have a baseline temp? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				controlTemp = True
+				baselineTemp = int(input("Please enter the baseline temp: "))
 			else:
-				print("Error, wrong choice was selected, choosing Makerhawk instead")
-				useMakerHawk = True
-				useLog4 = False
-			energyInterval = int(input("Please enter the Energy Polling Interval: "))
-		else:
-			runEnergyLog = False
+				controlTemp = False
 
-		choice = input("Do you want to get a CSV? Y/N:  ").upper()
-		if choice == "Y" or choice == "YES":
-			runClean = True
-			csvFile = input("Please enter the CSV File name you want: ")
-		else:
-			runClean = False
+			choice = input("Do you want to measure CPU Temps? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				runCpuTempLog = True
+				cpuInterval = int(input("Please enter the CPU polling interval: "))
+			else:
+				runCpuTempLog = False
+
+			choice = input("Do you want to measure Room temp (DHT22)? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				runDhtTempLog = True
+				dhtInterval = int(input("Please enter the DHT polling interval: "))
+			else:
+				runDhtTempLog = False
+
+			runLoadLog = input("Do you want to measure Loads? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				runLoadLog = True
+				loadInterval = int(input("Please enter the Load polling interval: "))
+			else:
+				runLoadLog = False
+
+			choice = input("Do you want to measure Energy? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				runEnergyLog = True
+				choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: ").upper()
+				if choice == "M" or choice == "MAKERHAWK":
+					useMakerHawk = True
+					useLog4 = False
+				elif choice == "L" or choice == "LOG4":
+					useMakerHawk = False
+					useLog4 = True
+				else:
+					print("Error, wrong choice was selected, choosing Makerhawk instead")
+					useMakerHawk = True
+					useLog4 = False
+				energyInterval = int(input("Please enter the Energy Polling Interval (in seconds, as poll is 6s / 11poll): "))
+			else:
+				runEnergyLog = False
+
+			choice = input("Do you want to get a CSV? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				runClean = True
+				csvFile = input("Please enter the CSV File name you want: ")
+			else:
+				runClean = False
 		return
 
 	def read_params(self):
@@ -227,11 +224,11 @@ class Manager:
 
 		if not os.path.isdir(sourceDir):
 			print("ERROR, source dir DNE")
-			return
+			sys.exit(1)
 
 		if not os.path.isfile(sourceDir + "Makefile"):
 			print("ERROR, source dir Makefile DNE")
-			return
+			sys.exit(1)
 
 		print("Compiling Source Files using given Makefile")
 		os.system("cd " + sourceDir + "&& make")
@@ -404,7 +401,6 @@ class Manager:
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
 
 	def data_to_sensor_only_csv(self):
-		global csvFile
 		csvFileName = sourceDir+csvFile
 		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp",
 					"Avg Room Temp"]
@@ -463,6 +459,13 @@ class Manager:
 		return
 
 	def data_to_final_csv(self):
+		# TODO iterate through file like above, however include volts/amps/watts from self.makerhawk
+		# TODO also include watt hours, although how idk, but the wattage is 1 / 6 seconds
+		# (or 1 per input poll)
+		# TODO formula for watt hours using this kind of data should be below
+		# Wp -> Watt Previous, Wc -> Watt Current, Wh_p, Wh_c
+		# Wh_c = Wh_p + ( ( (Wp + Wc) / 2 ) * (6/11) * (1/3600) )
+
 		return
 
 	def print_data_list(self):
@@ -479,11 +482,11 @@ class Manager:
 			print("Get ready to move your volts and amps files over to your source dir")
 			confirm = input("Press enter when you've finished importing the Volts and Watts csv's.....")
 			ampsFile = input("Please enter the name of your Amps File: ")
-			voltsFile = input("Please enter the name of your Volts File:" )
+			voltsFile = input("Please enter the name of your Volts File: " )
 			print("Compiling data from " + ampsFile + " and " + voltsFile)
-			self.makerhawk = MakerHawk(ampsFile, voltsFile)
+			self.makerhawk = MakerHawk(ampsFile, voltsFile, sourceDir)
 			self.makerhawk.compile_energy()
-			self.makerhawk.print_data()
+
 		else:
 			return
 		return
@@ -697,9 +700,27 @@ class MakerHawk:
 	# Data stored somethig like "[(tick, first, second), (t,f,s),...]
 
 	def __init__(self, ampsFile, voltsFile, source):
-		self.ampsFile = ampsFile
-		self.voltsFile = voltsFile
 		self.source = source
+		with open(source + ampsFile, 'r', encoding="utf8") as file:
+			lines = file.readlines()
+		lines = [line.replace(' ', '') for line in lines]
+		lines = [line.replace('\t',',') for line in lines]
+		with open(source + ampsFile, 'w', encoding="utf8") as file:
+			file.writelines(lines)
+		self.ampsFile = source + ampsFile
+		self.ampsKey = "Current(A)-Currentgraph"
+
+		with open(source + voltsFile, 'r', encoding="utf8") as file:
+			lines = file.readlines()
+		lines = [line.replace(' ', '') for line in lines]
+		lines = [line.replace('\t',',') for line in lines]
+		with open(source + voltsFile, 'w', encoding="utf8") as file:
+			file.writelines(lines)
+		self.voltsFile = source + voltsFile
+		self.voltsKey = "Voltage(V)-Voltagegraph"
+
+		# Every 6 seconds == 11 Makerhawk Polls
+		self.energyInterval = (11 / 6) * energyInterval
 		return
 
 	def compile_energy(self):
@@ -711,54 +732,41 @@ class MakerHawk:
 	def gather_averaged_amps(self):
 		amps_list = []
 		with open(self.ampsFile, 'r') as amps:
-			lineCount = 0
 			ampsReader = csv.DictReader(amps)
-			for measure in ampsReader:
-				if lineCount == 0:
-					lineCount+=1
-					continue
+			for amps in ampsReader:
 				avgIndex = 0
 				avgAmps = 0.0
-				while avgIndex < energyInterval:
-					avgAmps += measure[1]
+				while avgIndex < self.energyInterval:
+					avgAmps += round(float(amps[self.ampsKey]), 3)
 					avgIndex += 1
-				amps_list.append(avgAmps / energyInterval)
+				amps_list.append(round(avgAmps / self.energyInterval, 3))
 		self.hawk_data_set['amps'] = amps_list
 		return
 
 	def gather_amps(self):
 		amps_list = []
 		with open(self.ampsFile, 'r') as amps:
-			lineCount = 0
 			ampsReader = csv.DictReader(amps)
-			for measure in ampsReader:
-				if lineCount == 0:
-					lineCount+=1
-					continue
-				amps_list.append(avgAmps)
+			for amps in ampsReader:
+				amps_list.append(round(float(amps[self.ampsKey]), 3))
 		self.hawk_data_set['amps'] = amps_list
 		return
 
 	def gather_averaged_volts(self):
-		voltsAvg = 0.0
 		voltsSum = 0.0
 		voltsCount = 0
 		with open(self.voltsFile, 'r') as volts:
-			lineCount = 0
 			voltsReader = csv.DictReader(volts)
-			for measure in voltsReader:
-				if lineCount == 0:
-					lineCount+=1
-					continue
-				voltsSum += measure[1]
+			for volt in voltsReader:
+				voltsSum += round(float(volt[self.voltsKey]), 2)
 				voltsCount += 1
-		self.hawk_data_set['volt'] = (voltsSum / voltsCount)
+		self.hawk_data_set['volt'] = round(voltsSum / voltsCount, 4)
 		return
 
 	def gather_averaged_watts(self):
 		watts_list = []
 		for amps in self.hawk_data_set['amps']:
-			watts_list.append(amps * self.hawk_data_set['volts'])
+			watts_list.append(round(amps * self.hawk_data_set['volt'], 4))
 		self.hawk_data_set['watt'] = watts_list
 		return
 
@@ -783,31 +791,24 @@ class MakerHawk:
 
 manager = Manager()
 
-if runConfig:
-	manager.read_config()
-else:
-	manager.get_configs()
+manager.read_configs()
+
+manager.build_source_code()
 
 manager.read_params()
-
-#manager.build_source_code()
 
 #manager.build_loggers()
 
 #manager.test()
 #manager.run_loggers()
 
-#if runClean:
-#	if runEnergyLog && useMakerHawk:
-#		manager.gather_energy_data()
-#		manager.makerhawk.print_data()
-#		manager.data_to_final_csv()
-#	else:
-#		manager.data_to_sensor_only_csv()
-#else:
-#	manager.print_data_list()
-
-if runEnergyLog:
-	manager.gather_energy_data()
-	manager.makerhawk.print_data()
+if runClean:
+	if runEnergyLog && useMakerHawk:
+		manager.gather_energy_data()
+		#manager.makerhawk.print_data()
+		manager.data_to_final_csv()
+	else:
+		manager.data_to_sensor_only_csv()
+else:
+	manager.print_data_list()
 
