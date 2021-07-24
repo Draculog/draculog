@@ -20,8 +20,7 @@ import configparser # install using pip
 import re # used to read in params file (stripping whitespace and checking for #
 import csv # used for creation of CSV file of raw data
 import shutil # used to copy raw csv's elsewhere
-#import numpy # needed for pandas
-#import pandas as pd # used to transform  a txt file (from makerhawk) into a csv
+import math # used for energy intergration
 # Imports for external attachments
 import adafruit_dht # for DHT Sensor, install
 import gpiod # for DHT Sensor, install
@@ -60,7 +59,6 @@ energy_list = []
 params_list = []
 
 # Variables to read before execution
-controlTemp = False
 runCpuTempLog = False
 runDhtTempLog = False
 runEnergyLog = False
@@ -121,7 +119,6 @@ class Manager:
 			sourceDir = configReader.get("Parameters", "SourceDir")
 			paramsFile = configReader.get("Parameters", "ParamsFile")
 
-			controlTemp = configReader.getboolean("Parameters", "TempControl")
 			baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
 
 			runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
@@ -148,12 +145,7 @@ class Manager:
 			else:
 				controlTemp = False
 
-			choice = input("Do you want to measure CPU Temps? Y/N: ").upper()
-			if choice == "Y" or choice == "YES":
-				runCpuTempLog = True
-				cpuInterval = int(input("Please enter the CPU polling interval: "))
-			else:
-				runCpuTempLog = False
+			cpuInterval = int(input("Please enter the CPU polling interval: "))
 
 			choice = input("Do you want to measure Room temp (DHT22)? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
@@ -279,7 +271,7 @@ class Manager:
 		print("Running Tests with all params using given source code")
 		run_number = 0
 
-		if runEnergyLog and useMakerHawk:
+		if runEnergyLog and useMakerHawk and not runTest:
 			print("Please get your MakerHawk software ready, as there will be a 10 second count down once you hit enter below")
 			print("This is needed to align your Amp's CSV data from your Makerhawk with your other sensor data")
 			print("So make sure you clear the AMPS data/sensor/log in the Makerhawk software first please!")
@@ -357,14 +349,15 @@ class Manager:
 		this_run["Warmup End"] = self.warmupEnd
 		for key in self.loggers:
 			this_run[key] = self.loggers[key].get_data_set().copy()
-		# To Add avg room temp just in case
-		dhtSum = 0.0
-		measures = 0
-		for dhtMeasure in this_run['dht']:
-			if dhtMeasure != 0.0:
-				dhtSum += dhtMeasure[1]
-				measures += 1
-		this_run["Avg Room Temp"] = dhtSum / measures
+		if runDhtTempLog:
+			# TODO Bug here, DHT avg still keeps the 0.0 result, which is wack
+			dhtSum = 0.0
+			measures = 0
+			for dhtMeasure in this_run['dht']:
+				if dhtMeasure != 0.0:
+					dhtSum += dhtMeasure[1]
+					measures += 1
+			this_run["Avg Room Temp"] = dhtSum / measures
 
 		global data_list
 		data_list.append(this_run)
@@ -395,15 +388,23 @@ class Manager:
 	def cool_down(self):
 		self.cooldownStart = time.time()
 		while round(CPUTemperature().temperature) > (baselineTemp - 3):
-			print("TOO WARM, COOLING " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp - 3))
+			#print("TOO WARM, COOLING " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp - 3))
 			time.sleep(5)
 		self.cooldownEnd = time.time()
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
+		print("Delta Cool Downn time is " + str(self.cooldownDelta))
 
-	def data_to_sensor_only_csv(self):
+	def data_to_csv(self):
+#		if runEnergyLog and useMakerHawk:
+#			self.gather_energy_data()
+#			self.combine_energy_data()
+
 		csvFileName = sourceDir+csvFile
-		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp",
-					"Avg Room Temp"]
+		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp"]
+		if runDhtTempLog:
+			basic_header_keys.append("Avg Room Temp")
+		if runEnergyLog and useMakerHawk:
+			basic_header_keys.append("Avg Volts")
 		time_header_keys = ["Script Delta", "Script Start", "Script End",
 					"Cooldown Delta", "Cooldown Start", "Cooldown End",
 					"Warmup Delta", "Warmup Start", "Warmup End"]
@@ -423,6 +424,12 @@ class Manager:
 				csvWriter.writerow(header_row)
 				csvWriter.writerow(time_row)
 				csvWriter.writerow(" ")
+
+				if runEnergyLog and useMakerHawk:
+					self.loggers["amps"] = "ampsKey"
+					self.loggers["watts"] = "wattsKey"
+					self.loggers["watthours"] = "wattHourKey"
+
 				data_header = list(self.loggers.keys())
 				csvWriter.writerow(data_header)
 
@@ -435,20 +442,16 @@ class Manager:
 				for t in times:
 					data_row.clear()
 					for key in dict:
-						#print(key)
 						if key == "time":
 							data_row.append(t)
 							continue
 						if key in basic_header_keys or key in time_header_keys:
 							continue
 						if key == "dht" and dhtIndex < 3:
-							#print(dict[key][dhtIndex])
-							#print(dict[key])
 							data_row.append(dict[key][dhtIndex][1])
 							dhtIndex += 1
 							continue
 						elif key == "dht" and dhtIndex == 3:
-							#dhtFlop = True
 							continue
 						for data in dict[key]:
 							if round(data[0]) == round(t):
@@ -456,16 +459,6 @@ class Manager:
 
 					csvWriter.writerow(data_row)
 				csvWriter.writerow(" ")
-		return
-
-	def data_to_final_csv(self):
-		# TODO iterate through file like above, however include volts/amps/watts from self.makerhawk
-		# TODO also include watt hours, although how idk, but the wattage is 1 / 6 seconds
-		# (or 1 per input poll)
-		# TODO formula for watt hours using this kind of data should be below
-		# Wp -> Watt Previous, Wc -> Watt Current, Wh_p, Wh_c
-		# Wh_c = Wh_p + ( ( (Wp + Wc) / 2 ) * (6/11) * (1/3600) )
-
 		return
 
 	def print_data_list(self):
@@ -478,6 +471,10 @@ class Manager:
 	def gather_energy_data(self):
 		global ampsFile, voltsFile, finalCsv, energy_list
 		if useMakerHawk:
+			if runTest:
+				self.makerhawk = MakerHawk("Amps.txt", "Volts.txt", sourceDir)
+				self.makerhawk.compile_energy()
+				return
 			print("You used Makerhawk for energy logging")
 			print("Get ready to move your volts and amps files over to your source dir")
 			confirm = input("Press enter when you've finished importing the Volts and Watts csv's.....")
@@ -486,12 +483,99 @@ class Manager:
 			print("Compiling data from " + ampsFile + " and " + voltsFile)
 			self.makerhawk = MakerHawk(ampsFile, voltsFile, sourceDir)
 			self.makerhawk.compile_energy()
-
 		else:
 			return
 		return
 
 	def combine_energy_data(self):
+		global data_list
+		print("Parsing energy dictonary into the bigger data dictonary")
+		energyIndex = 0
+		for dict in data_list:
+			# get time data from this run first (warm up is pre, cool down is post)
+			# if warm up/cool down is <= 1s, skip that then
+			runTotalTime = dict["Script Delta"]
+			runEnergyTotalPolls = math.ceil(runTotalTime / energyInterval)
+			runCoolDTime = dict["Cooldown Delta"]
+			runEnergyCoolDPolls = math.floor(runCoolDTime / energyInterval)
+			runWarmUpTime = dict["Warmup Delta"]
+			runEnergyWarmUpPolls = math.floor(runWarmUpTime / energyInterval)
+			timeArray = dict["time"]
+			print("Len Time: ", len(timeArray))
+			dict['Avg Volts'] = self.makerhawk.get_data_set()['volt']
+
+			amps = []
+			ampsCool = []
+			ampsWarm = []
+
+			watts = []
+			wattsCool = []
+			wattsWarm = []
+
+			wattHours = []
+			wattHCool = []
+			wattHWarm = []
+
+			# this gives us the energy used pre script execution
+			if runEnergyWarmUpPolls >= 1:
+				warmUpPollLimit = energyIndex + runEnergyWarmUpPolls
+				while energyIndex < warmUpPollLimit:
+					ampsWarm.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
+					wattsWarm.append( (t,self.makerhawk.get_data_set()['watt'][energyIndex]) )
+					if energyIndex != runEnergyWarmUpPolls:
+						# formula is wh(Current) = wH(Previous)+((wP+wC)/2)*(6/11)*(1/3600)
+						wP = self.makerhawk.get_data_set()['watt'][energyIndex - 1]
+						wC = self.makerhawk.get_data_set()['watt'][energyIndex]
+						wH = wH + ((wP+wC)/2) * (6/11) * (1/3600)
+					wattHWarm.append( (t,wH) )
+					energyIndex+=1
+				#print("Warm Should be " + str(runEnergyWarmUpPolls + energyIndex) + ", it is " + str(energyIndex))
+
+			# this gives us the energy used during script execution
+			for t in timeArray:
+				#print("M-Data at " + str(energyIndex) + " = ",self.makerhawk.get_data_set()['amps'][energyIndex])
+				amps.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
+				watts.append( (t,self.makerhawk.get_data_set()['watt'][energyIndex]) )
+				wH = 0.0
+				if energyIndex != runEnergyTotalPolls:
+					# formula is wh(Current) = wH(Previous)+((wP+wC)/2)*(6/11)*(1/3600)
+					wP = self.makerhawk.get_data_set()['watt'][energyIndex - 1]
+					wC = self.makerhawk.get_data_set()['watt'][energyIndex]
+					wH = wH + ((wP+wC)/2) * (6/11) * (1/3600)
+				wattHours.append( (t,wH) )
+				energyIndex+=1
+			#print("Main Should be " + str(runEnergyTotalPolls) + ", it is " + str(energyIndex))
+
+			# this gives us the energy used after execution
+			if runEnergyCoolDPolls >= 1:
+				#print("Going to - ", (energyIndex + runEnergyCoolDPolls))
+				#print("From " + str(energyIndex) + " and " + str(runEnergyCoolDPolls))
+				coolDownPollLimit = energyIndex + runEnergyCoolDPolls
+				while energyIndex < coolDownPollLimit:
+					#print("I am at " + str(energyIndex))
+					#print("Heading to " + str(energyIndex + runEnergyCoolDPolls))
+					#print("C-Data at " + str(energyIndex) + " = ",self.makerhawk.get_data_set()['amps'][energyIndex])
+					ampsCool.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
+					wattsCool.append( (t,self.makerhawk.get_data_set()['watt'][energyIndex]) )
+					wH = 0.0
+					if energyIndex != runEnergyCoolDPolls:
+						# formula is wh(Current) = wH(Previous)+((wP+wC)/2)*(6/11)*(1/3600)
+						wP = self.makerhawk.get_data_set()['watt'][energyIndex - 1]
+						wC = self.makerhawk.get_data_set()['watt'][energyIndex]
+						wH = wH + ((wP+wC)/2) * (6/11) * (1/3600)
+					wattHCool.append( (t,wH) )
+					energyIndex+=1
+				#print("Cool Should be " + str(runEnergyCoolDPolls) + ", it is " + str(energyIndex))
+
+			dict["amps"] = amps
+			dict["ampsWarm"]= ampsWarm
+			dict["ampsCool"]= ampsCool
+			dict["watts"] = watts
+			dict["wattsWarm"] = wattsWarm
+			dict["wattsCool"] = wattsCool
+			dict["watthours"] = wattHours
+			dict["wattHoursWarm"] = wattHWarm
+			dict["wattHoursCool"] = wattHCool
 		return
 
 # End Manager
@@ -727,6 +811,7 @@ class MakerHawk:
 		self.gather_averaged_amps()
 		self.gather_averaged_volts()
 		self.gather_averaged_watts()
+		print("Successfully compiled all energy data into one dictonary!")
 		return
 
 	def gather_averaged_amps(self):
@@ -797,18 +882,19 @@ manager.build_source_code()
 
 manager.read_params()
 
-#manager.build_loggers()
+manager.build_loggers()
 
 #manager.test()
-#manager.run_loggers()
+manager.run_loggers()
 
 if runClean:
-	if runEnergyLog && useMakerHawk:
+	if runEnergyLog and useMakerHawk:
 		manager.gather_energy_data()
+		manager.combine_energy_data()
 		#manager.makerhawk.print_data()
-		manager.data_to_final_csv()
-	else:
-		manager.data_to_sensor_only_csv()
+	manager.data_to_csv()
 else:
 	manager.print_data_list()
+
+manager.print_data_list()
 
