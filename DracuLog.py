@@ -80,8 +80,7 @@ timeInterval = 6
 sourceDir = "Source/"
 paramsFile = "file"
 executable = "file"
-csvFile = "file"
-finalCsv = "file"
+csvFile = "raw_data_"
 voltsFile = "file"
 ampsFile = "file"
 
@@ -395,6 +394,7 @@ class Manager:
 		print("Delta Cool Downn time is " + str(self.cooldownDelta))
 
 	def data_to_csv(self):
+		global csvFile
 #		if runEnergyLog and useMakerHawk:
 #			self.gather_energy_data()
 #			self.combine_energy_data()
@@ -501,7 +501,7 @@ class Manager:
 			runWarmUpTime = dict["Warmup Delta"]
 			runEnergyWarmUpPolls = math.floor(runWarmUpTime / energyInterval)
 			timeArray = dict["time"]
-			print("Len Time: ", len(timeArray))
+			#print("Len Time: ", len(timeArray))
 			dict['Avg Volts'] = self.makerhawk.get_data_set()['volt']
 
 			amps = []
