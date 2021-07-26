@@ -64,6 +64,7 @@ runDhtTempLog = False
 runEnergyLog = False
 useMakerHawk = False
 useLog4 = False
+showTempCycles = False
 runLoadLog = False
 runClean = False
 runTest = True
@@ -77,6 +78,7 @@ energyInterval = 6
 timeInterval = 6
 
 # Grab Code from "/Source/" folder so this should be typed as "/Source/codeToRun"
+configFileName = "ReadMe.ini"
 sourceDir = "Source/"
 paramsFile = "file"
 executable = "file"
@@ -107,13 +109,61 @@ class Manager:
 	def __init__(self):
 		self.loggers = {}
 
+	def build_config_file(self):
+		with open(configFileName, 'w+') as configFile:
+			configFile.write("### DracuLog Configutation File")
+			configFile.write("##")
+			configFile.write("#")
+			configFile.write("[Description]")
+			configFile.write("# In this file contains the base parameters that our script uses to run your code and measure various")
+			configFile.write("# 'sensors' built into the script and your machine. Using a Pi 4b, a DHT22 sensor attached to the Pi, as well as")
+			configFile.write("# an energy monitoring device (such as a Makerhawk USB C energy monitor or a Log4 full fat energy monitor), this software")
+			configFile.write("# can measure how much energy your system used to run a script as well as your temperatures that occured")
+			configFile.write("# while running your script")
+			configFile.write(" ")
+			configFile.write("[Instructions]")
+			configFile.write("# If you want to change a parameter, simply copy what was there and replace it with your own variables.")
+			configFile.write("# Our software looks specifically for the variables named here, so do not change those.")
+			configFile.write(" ")
+			configFile.write("[Parameters]")
+			configFile.write("# Your source files location, followed by the name of your params file")
+			configFile.write("SourceDir = Source/sorts/")
+			configFile.write("ParamsFile = params.ini")
+			configFile.write("# Whether or not you want to maintain a baseline temperature (in C)")
+			configFile.write("BaseLineTemp = 60")
+			configFile.write("# If you want to monitor your CPU Temps alongside polling time")
+			configFile.write("CpuTempLog = False")
+			configFile.write("CpuInterval = 6")
+			configFile.write("# If you want to monitor your Room Temps (Using a DHT22) alongside polling time")
+			configFile.write("DhtTempLog = False")
+			configFile.write("DhtInterval = 6")
+			configFile.write("# If you want to monitor your Load (1 min Averages) alongside polling time")
+			configFile.write("LoadLog = False")
+			configFile.write("LoadInterval = 6")
+			configFile.write("# If you want to monitor your Energy Usage alongside polling time (Makerhawk is only intergrated into data, Log4 is a sensor)")
+			configFile.write("EnergyLog = False")
+			configFile.write("MakerHawk = False")
+			configFile.write("Log4 = False")
+			configFile.write("EnergyInterval = 6")
+			configFile.write("ShowTempCycles = False")
+			configFile.write("# If you want to intergrate the data into a single CSV")
+			configFile.write("CleanData = False")
+			configFile.write("CsvFile = raw_data.csv")
+		return
+
 	def read_configs(self):
+		# TODO make it so that if you delete or move the config file, we create a new one with NONE/False
 		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
 		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
 
 		if runConfig:
 			configReader = configparser.ConfigParser()
-			configReader.read("ReadMe.ini")
+			if not os.path.isfile(configFileName):
+				self.build_config_file()
+				print("No config file found, creating one now then exiting")
+				sys.exit(1)
+
+			configReader.read(configFileName)
 
 			sourceDir = configReader.get("Parameters", "SourceDir")
 			paramsFile = configReader.get("Parameters", "ParamsFile")
@@ -133,6 +183,7 @@ class Manager:
 			energyInterval = configReader.getint("Parameters", "EnergyInterval")
 			useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
 			useLog4 = configReader.getboolean("Parameters", "Log4")
+			showTempCycles = configReader.getboolean("Parameters", "EnergyLog")
 
 			runClean = configReader.getboolean("Parameters", "CleanData")
 			csvFile = configReader.get("Parameters", "CsvFile")
@@ -391,7 +442,7 @@ class Manager:
 			time.sleep(5)
 		self.cooldownEnd = time.time()
 		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
-		print("Delta Cool Downn time is " + str(self.cooldownDelta))
+		print("Delta Cool Down time is " + str(self.cooldownDelta))
 
 	def data_to_csv(self):
 		global csvFile
@@ -426,17 +477,22 @@ class Manager:
 				csvWriter.writerow(" ")
 
 				if runEnergyLog and useMakerHawk:
-					self.loggers["amps"] = "ampsKey"
+					#self.loggers["amps"] = "ampsKey"
 					self.loggers["watts"] = "wattsKey"
-					self.loggers["watthours"] = "wattHourKey"
+					self.loggers["wattHours"] = "wattHourKey"
+					wattRunOff = {}
+					wattRunOff["wattsWarm"] = dict["wattsWarm"].insert(0,"Watts Warm:")
+					wattRunOff["wattsCool"] = dict["wattsCool"].insert(0,"Watts Cool:")
+					wattRunOff["wattHoursWarm"] = dict["wattHoursWarm"].insert(0,"Watt Hours Warm:")
+					wattRunOff["wattHoursCool"] = dict["wattHoursCool"].insert(0,"Watt Hours Cool:")
 
 				data_header = list(self.loggers.keys())
 				csvWriter.writerow(data_header)
-
+				print("Data to store in CSV")
+				print(data_header)
 				data_row = []
 				times = list(dict["time"])
 
-				dhtFlop = False
 				dhtIndex = 0
 
 				for t in times:
@@ -452,13 +508,27 @@ class Manager:
 							dhtIndex += 1
 							continue
 						elif key == "dht" and dhtIndex == 3:
+							data_row.append(0.0)
 							continue
+						if key == "wattHoursWarm" or key == "wattHoursCool":
+							continue
+						if key == "wattsWarm" or key == "wattsCool":
+							continue
+#						foundData = None
 						for data in dict[key]:
 							if round(data[0]) == round(t):
+								#foundData = data[1]
+								#break
 								data_row.append(data[1])
+								break
+#						foundData = " " if foundData is None else foundData
+#						data_row.append(foundData)
 
 					csvWriter.writerow(data_row)
 				csvWriter.writerow(" ")
+				if showTempCycles:
+					for key in wattRunOff:
+						csvWriter.writerow(wattRunOff[key])
 		return
 
 	def print_data_list(self):
@@ -504,9 +574,9 @@ class Manager:
 			#print("Len Time: ", len(timeArray))
 			dict['Avg Volts'] = self.makerhawk.get_data_set()['volt']
 
-			amps = []
-			ampsCool = []
-			ampsWarm = []
+			#amps = []
+			#ampsCool = []
+			#ampsWarm = []
 
 			watts = []
 			wattsCool = []
@@ -518,9 +588,10 @@ class Manager:
 
 			# this gives us the energy used pre script execution
 			if runEnergyWarmUpPolls >= 1:
+				wH = 0
 				warmUpPollLimit = energyIndex + runEnergyWarmUpPolls
 				while energyIndex < warmUpPollLimit:
-					ampsWarm.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
+					#ampsWarm.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
 					wattsWarm.append( (t,self.makerhawk.get_data_set()['watt'][energyIndex]) )
 					if energyIndex != runEnergyWarmUpPolls:
 						# formula is wh(Current) = wH(Previous)+((wP+wC)/2)*(6/11)*(1/3600)
@@ -532,16 +603,19 @@ class Manager:
 				#print("Warm Should be " + str(runEnergyWarmUpPolls + energyIndex) + ", it is " + str(energyIndex))
 
 			# this gives us the energy used during script execution
+			wH = 0
 			for t in timeArray:
 				#print("M-Data at " + str(energyIndex) + " = ",self.makerhawk.get_data_set()['amps'][energyIndex])
-				amps.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
+				#amps.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
 				watts.append( (t,self.makerhawk.get_data_set()['watt'][energyIndex]) )
-				wH = 0.0
 				if energyIndex != runEnergyTotalPolls:
 					# formula is wh(Current) = wH(Previous)+((wP+wC)/2)*(6/11)*(1/3600)
+					#print("WattHours at " + str(energyIndex) + " is " + str(wH))
 					wP = self.makerhawk.get_data_set()['watt'][energyIndex - 1]
 					wC = self.makerhawk.get_data_set()['watt'][energyIndex]
+					#print("Formula is " + str(wH) + " + (" + str(wP) + " + " + str(wC) + ")/2 * (6/11) * (1/3600)")
 					wH = wH + ((wP+wC)/2) * (6/11) * (1/3600)
+					#print("Which equals " + str(wH))
 				wattHours.append( (t,wH) )
 				energyIndex+=1
 			#print("Main Should be " + str(runEnergyTotalPolls) + ", it is " + str(energyIndex))
@@ -550,14 +624,14 @@ class Manager:
 			if runEnergyCoolDPolls >= 1:
 				#print("Going to - ", (energyIndex + runEnergyCoolDPolls))
 				#print("From " + str(energyIndex) + " and " + str(runEnergyCoolDPolls))
+				wH = 0
 				coolDownPollLimit = energyIndex + runEnergyCoolDPolls
 				while energyIndex < coolDownPollLimit:
 					#print("I am at " + str(energyIndex))
 					#print("Heading to " + str(energyIndex + runEnergyCoolDPolls))
 					#print("C-Data at " + str(energyIndex) + " = ",self.makerhawk.get_data_set()['amps'][energyIndex])
-					ampsCool.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
+					#ampsCool.append( (t,self.makerhawk.get_data_set()['amps'][energyIndex]) )
 					wattsCool.append( (t,self.makerhawk.get_data_set()['watt'][energyIndex]) )
-					wH = 0.0
 					if energyIndex != runEnergyCoolDPolls:
 						# formula is wh(Current) = wH(Previous)+((wP+wC)/2)*(6/11)*(1/3600)
 						wP = self.makerhawk.get_data_set()['watt'][energyIndex - 1]
@@ -567,13 +641,13 @@ class Manager:
 					energyIndex+=1
 				#print("Cool Should be " + str(runEnergyCoolDPolls) + ", it is " + str(energyIndex))
 
-			dict["amps"] = amps
-			dict["ampsWarm"]= ampsWarm
-			dict["ampsCool"]= ampsCool
+			#dict["amps"] = amps
+			#dict["ampsWarm"]= ampsWarm
+			#dict["ampsCool"]= ampsCool
 			dict["watts"] = watts
 			dict["wattsWarm"] = wattsWarm
 			dict["wattsCool"] = wattsCool
-			dict["watthours"] = wattHours
+			dict["wattHours"] = wattHours
 			dict["wattHoursWarm"] = wattHWarm
 			dict["wattHoursCool"] = wattHCool
 		return
