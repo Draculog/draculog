@@ -4,7 +4,7 @@
 
 apt-get update
 
-apt-get upgrade
+#apt-get upgrade
 
 # Clang install
 apt-get install clang-11 --install-suggests 
@@ -16,8 +16,12 @@ apt-get install build-essential manpages-dev
 apt-get install python3-dev python3-pip python3-libgpiod
 
 # Python3 DHT22 Tools
-python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pip install --upgrade pip setuptools wheel testresources gpiozero
 
-pip3 install adafruit-circuitpython-dht
+pip3 install adafruit-circuitpython-dht adafruit-circuitpython-lis3dh
 
-pip3 install adafruit-circuitpython-lis3dh
+# Python PyRAPL Tools and permissions
+pip install pyRAPL pymongo pandas
+
+
+chmod -R a+r /sys/class/powercap/intel-rapl

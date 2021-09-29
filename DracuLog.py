@@ -24,10 +24,14 @@ import math # used for energy intergration
 # Imports for external attachments
 import adafruit_dht # for DHT Sensor, install
 import gpiod # for DHT Sensor, install
-import board # for DHT Sensor, install
+try:
+	import board # for DHT Sensor, install
+except:
+	print("This software is running on a non-PI system, skipping board library import")
 from gpiozero import CPUTemperature # for CPU Temp, install
-import serial # install
-#import MakerHawkDataCompiler.py
+import serial # install for something, can't remember atm
+import pyRAPL # for the energy measurement of the CPU
+import datetime # for date processing for pyRAPL
 
 ### Global Variables
 ##
@@ -63,12 +67,15 @@ runCpuTempLog = False
 runDhtTempLog = False
 runEnergyLog = False
 useMakerHawk = False
-useLog4 = False
+usePyRapl = False
 showTempCycles = False
 runLoadLog = False
 runClean = False
 runTest = True
 runConfig = False
+
+buildConfig = False
+buildParams = False
 
 # Variables to read at execution
 cpuInterval = 6
@@ -93,9 +100,20 @@ if len(sys.argv) > 1:
 	if 'test' in sys.argv or 't' in sys.argv:
 		print("You are now using the testing version of the software with preassigned variables")
 		runTest = True
-	if 'config' in sys.argv or 'c' in sys.argv:
+	elif 'config' in sys.argv or 'c' in sys.argv:
 		print("Using config.ini file instead of prompts")
 		runConfig = True
+	elif 'buildConfig' in sys.argv or 'bc' in sys.argv:
+		print("Will build config file then exit")
+		buildConfig = True
+	elif 'buildParam' in sys.argv or 'bp' in sys.argv:
+		print("Will build sample params file then exit")
+		buildParams = True
+	elif 'help' in sys.argv or 'h' in sys.argv:
+		print("Commands are as follows:\nconfig/c == Use the config.ini file (ReadMe.ini) instead of taking in input at run time\n")
+		print("builddConfig/bc == Build a stock config.ini file if you have deleted yours\n")
+		print("buildParap/bp == Build a sample param.ini file in your source folder if you don't have one\n")
+		sys.exit()
 	else:
 		print("You've used an unknown flag, ending program")
 		sys.exit()
@@ -143,12 +161,19 @@ class Manager:
 			configFile.write("# If you want to monitor your Energy Usage alongside polling time (Makerhawk is only intergrated into data, Log4 is a sensor)")
 			configFile.write("EnergyLog = False")
 			configFile.write("MakerHawk = False")
-			configFile.write("Log4 = False")
+			configFile.write("PyRAPL = False")
 			configFile.write("EnergyInterval = 6")
 			configFile.write("ShowTempCycles = False")
 			configFile.write("# If you want to intergrate the data into a single CSV")
 			configFile.write("CleanData = False")
 			configFile.write("CsvFile = raw_data.csv")
+		return
+
+	def build_params_file(self):
+		with open("Source/params.ini", 'w+') as params:
+			params.write("# This is a sample params file.\n")
+			params.write("# '#' signifies a comment, for everything else put it on a single line.\n")
+			params.write("# For example, if your source code used a letter and a number to signify the params, put 'b 50000' on one line.\n")
 		return
 
 	def read_configs(self):
@@ -164,7 +189,6 @@ class Manager:
 				sys.exit(1)
 
 			configReader.read(configFileName)
-
 			sourceDir = configReader.get("Parameters", "SourceDir")
 			paramsFile = configReader.get("Parameters", "ParamsFile")
 
@@ -182,7 +206,7 @@ class Manager:
 			runEnergyLog = configReader.getboolean("Parameters", "EnergyLog")
 			energyInterval = configReader.getint("Parameters", "EnergyInterval")
 			useMakerHawk = configReader.getboolean("Parameters", "MakerHawk")
-			useLog4 = configReader.getboolean("Parameters", "Log4")
+			usePyRAPL = configReader.getboolean("Parameters", "PyRAPL")
 			showTempCycles = configReader.getboolean("Parameters", "EnergyLog")
 
 			runClean = configReader.getboolean("Parameters", "CleanData")
@@ -214,17 +238,17 @@ class Manager:
 			choice = input("Do you want to measure Energy? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
 				runEnergyLog = True
-				choice = input("Do you want to use a MakerHawk USB Power Meter or a Log4? M/L: ").upper()
+				choice = input("Do you want to use a MakerHawk USB Power Meter or a PyRAPL? M/P: ").upper()
 				if choice == "M" or choice == "MAKERHAWK":
 					useMakerHawk = True
 					useLog4 = False
-				elif choice == "L" or choice == "LOG4":
+				elif choice == "P" or choice == "PYRAPL":
 					useMakerHawk = False
-					useLog4 = True
+					usePyRAPL = True
 				else:
 					print("Error, wrong choice was selected, choosing Makerhawk instead")
 					useMakerHawk = True
-					useLog4 = False
+					usePyRAPL = False
 				energyInterval = int(input("Please enter the Energy Polling Interval (in seconds, as poll is 6s / 11poll): "))
 			else:
 				runEnergyLog = False
@@ -236,7 +260,6 @@ class Manager:
 			else:
 				runClean = False
 		return
-
 	def read_params(self):
 		global params_list, paramsFile
 		if not runConfig:
@@ -297,9 +320,10 @@ class Manager:
 			dht = DhtLog()
 			self.loggers['dht'] = dht
 		if runEnergyLog:
-			if useLog4:
-			#TODO Impliment a log4 sensor, when you have time
-				pass
+			if usePyRAPL:
+				pyrapl = PyRAPLLOG()
+				pyrapl.build_loggers()
+				self.loggers['pyrapl'] = pyrapl
 		return
 
 	def count_down(self, timelimit):
@@ -314,14 +338,14 @@ class Manager:
 	def rebuild_loggers(self, runNumber):
 		print("Rebuilding Threads")
 		for key in self.loggers:
-			if key != "dht":
+			if key != "dht" and key != "pyrapl":
 				self.loggers[key].rebuild_logger(runNumber)
 
 	def run_loggers(self):
 		print("Running Tests with all params using given source code")
 		run_number = 0
 
-		if runEnergyLog and useMakerHawk and not runTest:
+		if runEnergyLog and useMakerHawk and not runTest and not usePyRapl:
 			print("Please get your MakerHawk software ready, as there will be a 10 second count down once you hit enter below")
 			print("This is needed to align your Amp's CSV data from your Makerhawk with your other sensor data")
 			print("So make sure you clear the AMPS data/sensor/log in the Makerhawk software first please!")
@@ -345,20 +369,30 @@ class Manager:
 					self.loggers['dht'].dht_data_set.clear()
 
 			for key in self.loggers:
-				if key != "dht":
+				if key != "dht" and key != "pyrapl":
 					print("Starting logger for " + key)
 					self.loggers[key].start_logging()
 				if key == "dht":
 					print("Polling DHT")
 					self.loggers['dht'].poll_dht22()
+				if key == "pyrapl":
+					print("Building Meter for this run")
+					self.loggers['pyrapl'].create_meter(param)
 
 			self.warm_up()
+
+			### Script Execution Start
+			if usePyRapl:
+				self.loggers['pyrapl'].meter.begin()
 
 			self.startTime =  time.time()
 			output = subprocess.Popen(command,shell=True, stdout=results_file)
 			output.wait()
 			self.endTime = time.time()
 
+			if usePyRapl:
+				self.loggers['pyrapl'].meter.end()
+			### Script Execution End
 
 			if runDhtTempLog:
 				print("Polling DHT")
@@ -399,6 +433,7 @@ class Manager:
 		this_run["Warmup End"] = self.warmupEnd
 		for key in self.loggers:
 			this_run[key] = self.loggers[key].get_data_set().copy()
+
 		if runDhtTempLog:
 			# TODO Bug here, DHT avg still keeps the 0.0 result, which is wack
 			dhtSum = 0.0
@@ -408,6 +443,10 @@ class Manager:
 					dhtSum += dhtMeasure[1]
 					measures += 1
 			this_run["Avg Room Temp"] = dhtSum / measures
+
+		if usePyRapl:
+			# Add energy value only
+			this_run["Total Energy Used"] = self.loggers['pyrapl'].meter.result.pkg[0]
 
 		global data_list
 		data_list.append(this_run)
@@ -456,6 +495,8 @@ class Manager:
 			basic_header_keys.append("Avg Room Temp")
 		if runEnergyLog and useMakerHawk:
 			basic_header_keys.append("Avg Volts")
+		if runEnergyLog and usePyRapl:
+			basic_header_keys.append("Total Energy Used")
 		time_header_keys = ["Script Delta", "Script Start", "Script End",
 					"Cooldown Delta", "Cooldown Start", "Cooldown End",
 					"Warmup Delta", "Warmup Start", "Warmup End"]
@@ -660,6 +701,7 @@ class TimeLog:
 
 	def __init__(self, timeInterval):
 		self.timeInterval = timeInterval
+		return
 
 	def log(self):
 		while continueLogging:
@@ -669,13 +711,16 @@ class TimeLog:
 
 	def start_logging(self):
 		self.thread.start()
+		return
 
 	def build_logger(self):
 		self.thread = threading.Thread(target=self.log, name="TimeLogger")
+		return
 
 	def rebuild_logger(self,runNumber):
 		self.thread = threading.Thread(target=self.log, name="TimeLogger"+str(runNumber))
 		self.time_set.clear()
+		return
 
 	def get_data_set(self):
 		return self.time_set
@@ -691,6 +736,7 @@ class CpuLog:
 	def __init__(self, cpuInterval):
 		self.cpuInterval = cpuInterval
 		self.cpu = CPUTemperature()
+		return
 
 	def log(self):
 		while continueLogging:
@@ -716,6 +762,7 @@ class CpuLog:
 
 	def start_logging(self):
 		self.thread.start()
+		return
 
 	def build_logger(self):
 		self.thread = threading.Thread(target=self.log, name="CpuLogger")
@@ -811,6 +858,7 @@ class LoadLog:
 
 	def __init__(self, loadInterval):
 		self.loadInterval = loadInterval
+		return
 
 	def log(self):
 		self.counter = 0
@@ -834,18 +882,22 @@ class LoadLog:
 
 	def start_logging(self):
 		self.thread.start()
+		return
 
 	def build_logger(self):
 		self.thread = threading.Thread(target=self.log, name="LoadLogger")
+		return
 	def rebuild_logger(self,runNumber):
 		self.thread = threading.Thread(target=self.log, name="LoadLogger"+str(runNumber))
 		self.load_data_set.clear()
+		return
 
 	def print_data(self):
 		print("==========LOAD==========")
 		print("Success: " + str(self.success) + " Failures: " + str(self.failure))
 		print("Measures: ")
 		print(self.load_data_set)
+		return
 
 	def get_data_set(self):
 		return self.load_data_set
@@ -938,7 +990,47 @@ class MakerHawk:
 	def get_data_set(self):
 		return self.hawk_data_set
 
-# End MakerHawk
+class PyRAPLLog:
+
+	pyraplDataSet = []
+	meter = None
+	# Holds a series of meters like [meter.results(1), meter.results(2),..., meter.results(N)]
+	#meter.result returns an object like class pyRAPL.Result(label, timestamp, duration, pkg=None, dram=None)
+	# label (str) – measurement label
+	# timestamp (float) – measurement’s beginning time (expressed in seconds since the epoch)
+	# duration (float) – measurement’s duration (in micro seconds)
+	# pkg (Optional[List[float]]) – list of the CPU energy consumption -expressed in micro Joules- (one value for each socket) if None, no CPU energy consumption was recorded
+	# dram (Optional[List[float]]) – list of the RAM energy consumption -expressed in seconds- (one value for each socket) if None, no RAM energy consumption was recorded
+
+
+	def __init__(self):
+		return
+
+	def build_logger(self):
+		pyRAPL.setup(devices=[pyRAPL.Device.PKG])
+		return
+
+	def create_meter(self, meterLabel):
+		this.meter = pyRAPL.Measurement(meterLabel)
+		return meter
+
+	def compile_energy(self, meter):
+		self.pyraplDataSet.append( (float(meter.timestamp), meter.result) )
+		return
+
+	def rebuild_logger(self):
+		return
+
+	def print_data(self):
+		print("==========PYRAPL ENERGY==========")
+		for result in self.pyraplDataSet:
+			print(result)
+		return
+
+	def get_data_set(self):
+		return self.pyraplDataSet
+
+# End PyRAPL
 
 ### Functions
 ##
@@ -949,6 +1041,15 @@ class MakerHawk:
 #
 
 manager = Manager()
+
+if buildConfig or buildParams:
+	if buildConfig:
+		print("Building Config")
+		manager.build_config_file()
+	if buildParams:
+		print("Building Params")
+		manager.build_params_file()
+	sys.exit()
 
 manager.read_configs()
 
