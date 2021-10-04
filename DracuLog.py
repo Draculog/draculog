@@ -3,14 +3,45 @@
 ##
 #
 
-#TODO impliment second cleaner script that is called from this script at the end, passing in 3 csv's (possibly)
-# one for the cpu/dht/load/time raw data, one for volts and one for amps
+# TODO change interval stuff to be a global variable, not a by case variable (if we want 6 sec intervals for CPU temp and Energy, we also would want that for loads)
+
+# Basic Variable to determine what our script does
+import sys
+
+onPI = True
+runTest = False
+runConfig = False
+buildConfig = False
+buildParams = False
+### Pre Execution
+##
+#
+if len(sys.argv) > 1:
+	if 'test' in sys.argv or 't' in sys.argv:
+		print("You are now using the testing version of the software with preassigned variables")
+		runTest = True
+	elif 'config' in sys.argv or 'c' in sys.argv:
+		print("Using config.ini file instead of prompts")
+		runConfig = True
+	elif 'buildConfig' in sys.argv or 'bc' in sys.argv:
+		print("Will build config file then exit")
+		buildConfig = True
+	elif 'buildParam' in sys.argv or 'bp' in sys.argv:
+		print("Will build sample params file then exit")
+		buildParams = True
+	elif 'help' in sys.argv or 'h' in sys.argv:
+		print("Commands are as follows:\nconfig/c == Use the config.ini file (ReadMe.ini) instead of taking in input at run time\n")
+		print("builddConfig/bc == Build a stock config.ini file if you have deleted yours\n")
+		print("buildParap/bp == Build a sample param.ini file in your source folder if you don't have one\n")
+		sys.exit()
+	else:
+		print("You've used an unknown flag, ending program")
+		sys.exit()
 
 ### Imports
 ##
 # Imports for basic system processes
 import os # used all over for operations
-import sys # now used to heat up the cpu
 import time # used to time everything (and to sleep for xInterval)
 import subprocess # used for code execution
 import threading # used to multi thread the loggers/sensors
@@ -28,7 +59,12 @@ try:
 	import board # for DHT Sensor, install
 except:
 	print("This software is running on a non-PI system, skipping board library import")
-from gpiozero import CPUTemperature # for CPU Temp, install
+	onPI=False
+if onPI:
+	from gpiozero import CPUTemperature # for CPU Temp, install
+else:
+	import psutil
+
 import serial # install for something, can't remember atm
 import pyRAPL # for the energy measurement of the CPU
 import datetime # for date processing for pyRAPL
@@ -63,19 +99,15 @@ energy_list = []
 params_list = []
 
 # Variables to read before execution
+controlTemp = False
 runCpuTempLog = False
 runDhtTempLog = False
 runEnergyLog = False
 useMakerHawk = False
-usePyRapl = False
+usePyRAPL = False
 showTempCycles = False
 runLoadLog = False
 runClean = False
-runTest = True
-runConfig = False
-
-buildConfig = False
-buildParams = False
 
 # Variables to read at execution
 cpuInterval = 6
@@ -87,36 +119,11 @@ timeInterval = 6
 # Grab Code from "/Source/" folder so this should be typed as "/Source/codeToRun"
 configFileName = "ReadMe.ini"
 sourceDir = "Source/"
-paramsFile = "file"
+paramsFile = "params.ini"
 executable = "file"
-csvFile = "raw_data_"
+csvFile = "raw_data.csv"
 voltsFile = "file"
 ampsFile = "file"
-
-### Pre Execution
-##
-#
-if len(sys.argv) > 1:
-	if 'test' in sys.argv or 't' in sys.argv:
-		print("You are now using the testing version of the software with preassigned variables")
-		runTest = True
-	elif 'config' in sys.argv or 'c' in sys.argv:
-		print("Using config.ini file instead of prompts")
-		runConfig = True
-	elif 'buildConfig' in sys.argv or 'bc' in sys.argv:
-		print("Will build config file then exit")
-		buildConfig = True
-	elif 'buildParam' in sys.argv or 'bp' in sys.argv:
-		print("Will build sample params file then exit")
-		buildParams = True
-	elif 'help' in sys.argv or 'h' in sys.argv:
-		print("Commands are as follows:\nconfig/c == Use the config.ini file (ReadMe.ini) instead of taking in input at run time\n")
-		print("builddConfig/bc == Build a stock config.ini file if you have deleted yours\n")
-		print("buildParap/bp == Build a sample param.ini file in your source folder if you don't have one\n")
-		sys.exit()
-	else:
-		print("You've used an unknown flag, ending program")
-		sys.exit()
 
 ### Classes
 ##
@@ -148,6 +155,7 @@ class Manager:
 			configFile.write("SourceDir = Source/sorts/")
 			configFile.write("ParamsFile = params.ini")
 			configFile.write("# Whether or not you want to maintain a baseline temperature (in C)")
+			configFile.write("ControlTemp = False")
 			configFile.write("BaseLineTemp = 60")
 			configFile.write("# If you want to monitor your CPU Temps alongside polling time")
 			configFile.write("CpuTempLog = False")
@@ -179,7 +187,7 @@ class Manager:
 	def read_configs(self):
 		# TODO make it so that if you delete or move the config file, we create a new one with NONE/False
 		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
-		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,useLog4,runClean
+		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,usePyRAPL,runClean
 
 		if runConfig:
 			configReader = configparser.ConfigParser()
@@ -192,6 +200,7 @@ class Manager:
 			sourceDir = configReader.get("Parameters", "SourceDir")
 			paramsFile = configReader.get("Parameters", "ParamsFile")
 
+			controlTemp = configReader.getboolean("Parameters", "ControlTemp")
 			baselineTemp = configReader.getint("Parameters", "BaseLineTemp")
 
 			runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
@@ -219,7 +228,10 @@ class Manager:
 			else:
 				controlTemp = False
 
-			cpuInterval = int(input("Please enter the CPU polling interval: "))
+			choice = input("Do you want to measure the CPU's temperatures? Y/N: ").upper()
+			if choice == "Y" or choice == "YES":
+				runCpuTempLog = True
+				cpuInterval = int(input("Please enter the CPU polling interval: "))
 
 			choice = input("Do you want to measure Room temp (DHT22)? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
@@ -228,7 +240,7 @@ class Manager:
 			else:
 				runDhtTempLog = False
 
-			runLoadLog = input("Do you want to measure Loads? Y/N: ").upper()
+			choice = input("Do you want to measure Loads? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
 				runLoadLog = True
 				loadInterval = int(input("Please enter the Load polling interval: "))
@@ -241,7 +253,8 @@ class Manager:
 				choice = input("Do you want to use a MakerHawk USB Power Meter or a PyRAPL? M/P: ").upper()
 				if choice == "M" or choice == "MAKERHAWK":
 					useMakerHawk = True
-					useLog4 = False
+					usePyRAPL = False
+					energyInterval = int(input("Please enter the Energy Polling Interval (in seconds, as poll is 6s / 11poll): "))
 				elif choice == "P" or choice == "PYRAPL":
 					useMakerHawk = False
 					usePyRAPL = True
@@ -249,7 +262,7 @@ class Manager:
 					print("Error, wrong choice was selected, choosing Makerhawk instead")
 					useMakerHawk = True
 					usePyRAPL = False
-				energyInterval = int(input("Please enter the Energy Polling Interval (in seconds, as poll is 6s / 11poll): "))
+					energyInterval = int(input("Please enter the Energy Polling Interval (in seconds, as poll is 6s / 11poll): "))
 			else:
 				runEnergyLog = False
 
@@ -321,8 +334,8 @@ class Manager:
 			self.loggers['dht'] = dht
 		if runEnergyLog:
 			if usePyRAPL:
-				pyrapl = PyRAPLLOG()
-				pyrapl.build_loggers()
+				pyrapl = PyRAPLLog()
+				pyrapl.build_logger()
 				self.loggers['pyrapl'] = pyrapl
 		return
 
@@ -340,12 +353,13 @@ class Manager:
 		for key in self.loggers:
 			if key != "dht" and key != "pyrapl":
 				self.loggers[key].rebuild_logger(runNumber)
+		return
 
 	def run_loggers(self):
 		print("Running Tests with all params using given source code")
 		run_number = 0
 
-		if runEnergyLog and useMakerHawk and not runTest and not usePyRapl:
+		if runEnergyLog and useMakerHawk and not runTest and not usePyRAPL:
 			print("Please get your MakerHawk software ready, as there will be a 10 second count down once you hit enter below")
 			print("This is needed to align your Amp's CSV data from your Makerhawk with your other sensor data")
 			print("So make sure you clear the AMPS data/sensor/log in the Makerhawk software first please!")
@@ -378,11 +392,11 @@ class Manager:
 				if key == "pyrapl":
 					print("Building Meter for this run")
 					self.loggers['pyrapl'].create_meter(param)
-
-			self.warm_up()
+			if controlTemp:
+				self.warm_up()
 
 			### Script Execution Start
-			if usePyRapl:
+			if usePyRAPL:
 				self.loggers['pyrapl'].meter.begin()
 
 			self.startTime =  time.time()
@@ -390,7 +404,7 @@ class Manager:
 			output.wait()
 			self.endTime = time.time()
 
-			if usePyRapl:
+			if usePyRAPL:
 				self.loggers['pyrapl'].meter.end()
 			### Script Execution End
 
@@ -402,7 +416,8 @@ class Manager:
 			self.elapsedTime = self.endTime - self.startTime
 			print("Elapsed time is " + str(self.elapsedTime))
 
-			self.cool_down()
+			if controlTemp:
+				self.cool_down()
 
 			if runDhtTempLog:
 				print("Polling DHT")
@@ -425,12 +440,13 @@ class Manager:
 		this_run["Script Delta"] = self.elapsedTime
 		this_run["Script Start"] = self.startTime
 		this_run["Script End"] = self.endTime
-		this_run["Cooldown Delta"] = self.cooldownDelta
-		this_run["Cooldown Start"] = self.cooldownStart
-		this_run["Cooldown End"] = self.cooldownEnd
-		this_run["Warmup Delta"] = self.warmupDelta
-		this_run["Warmup Start"] = self.warmupStart
-		this_run["Warmup End"] = self.warmupEnd
+		if controlTemp:
+			this_run["Cooldown Delta"] = self.cooldownDelta
+			this_run["Cooldown Start"] = self.cooldownStart
+			this_run["Cooldown End"] = self.cooldownEnd
+			this_run["Warmup Delta"] = self.warmupDelta
+			this_run["Warmup Start"] = self.warmupStart
+			this_run["Warmup End"] = self.warmupEnd
 		for key in self.loggers:
 			this_run[key] = self.loggers[key].get_data_set().copy()
 
@@ -444,9 +460,10 @@ class Manager:
 					measures += 1
 			this_run["Avg Room Temp"] = dhtSum / measures
 
-		if usePyRapl:
+		if usePyRAPL:
 			# Add energy value only
-			this_run["Total Energy Used"] = self.loggers['pyrapl'].meter.result.pkg[0]
+			this_run["Total Energy (Micro Joules)"] = self.loggers['pyrapl'].meter.result.pkg[0]
+			this_run["Total Energy (MilliWatt Hours)"] = 0.0
 
 		global data_list
 		data_list.append(this_run)
@@ -490,16 +507,18 @@ class Manager:
 #			self.combine_energy_data()
 
 		csvFileName = sourceDir+csvFile
+		print("Saving all data to " + csvFileName)
 		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp"]
 		if runDhtTempLog:
 			basic_header_keys.append("Avg Room Temp")
 		if runEnergyLog and useMakerHawk:
 			basic_header_keys.append("Avg Volts")
-		if runEnergyLog and usePyRapl:
-			basic_header_keys.append("Total Energy Used")
-		time_header_keys = ["Script Delta", "Script Start", "Script End",
-					"Cooldown Delta", "Cooldown Start", "Cooldown End",
-					"Warmup Delta", "Warmup Start", "Warmup End"]
+		if runEnergyLog and usePyRAPL:
+			basic_header_keys.append("Total Energy (Micro Joules)")
+			basic_header_keys.append("Total Energy (MilliWatt Hours)")
+		time_header_keys = ["Script Delta", "Script Start", "Script End"]
+		if controlTemp:
+			time_header_keys.append(["Cooldown Delta", "Cooldown Start", "Cooldown End", "Warmup Delta", "Warmup Start", "Warmup End"])
 		header_row = []
 		time_row = []
 		with open(csvFileName, 'w', newline='') as csvFile:
@@ -555,15 +574,12 @@ class Manager:
 							continue
 						if key == "wattsWarm" or key == "wattsCool":
 							continue
-#						foundData = None
+						if key == "pyralp":
+							continue
 						for data in dict[key]:
 							if round(data[0]) == round(t):
-								#foundData = data[1]
-								#break
 								data_row.append(data[1])
 								break
-#						foundData = " " if foundData is None else foundData
-#						data_row.append(foundData)
 
 					csvWriter.writerow(data_row)
 				csvWriter.writerow(" ")
@@ -735,29 +751,46 @@ class CpuLog:
 
 	def __init__(self, cpuInterval):
 		self.cpuInterval = cpuInterval
-		self.cpu = CPUTemperature()
+		if onPI:
+			self.cpu = CPUTemperature()
 		return
 
 	def log(self):
-		while continueLogging:
-			try:
-				#tempfile = open('/sys/class/thermal/thermal_zone0/temp', "r")
-				#cpuTempRaw = float(tempfile.read())
-				#tempfile.close()
-				#cpuTemp = cpuTempRaw / 1000
-				cpuTemp = self.cpu.temperature
-			except RunTimeError:
-				self.failure+=1
-				cpuTemp=0.0
-				pass
-			this_time = time.time()
-			if cpuTemp is not None:
-				self.success+=1
-			else:
-				self.failure+=1
-				cpuTemp=0.00
-			self.cpu_data_set.append( (float(this_time),cpuTemp) )
-			time.sleep(self.cpuInterval)
+		if onPI:
+			while continueLogging:
+				try:
+					#tempfile = open('/sys/class/thermal/thermal_zone0/temp', "r")
+					#cpuTempRaw = float(tempfile.read())
+					#tempfile.close()
+					#cpuTemp = cpuTempRaw / 1000
+					cpuTemp = self.cpu.temperature
+				except RunTimeError:
+					self.failure+=1
+					cpuTemp=0.0
+					pass
+				this_time = time.time()
+				if cpuTemp is not None:
+					self.success+=1
+				else:
+					self.failure+=1
+					cpuTemp=0.00
+				self.cpu_data_set.append( (float(this_time),cpuTemp) )
+				time.sleep(self.cpuInterval)
+		else:
+			while continueLogging:
+				try:
+					cpuTemp = psutil.sensors_temperatures()['coretemp'][0][1] # Grabs sensors, then the CPU specific temp, then PKG temp, then temp
+				except RunTimeError:
+					self.failure+=1
+					cpuTemp=0.0
+					pass
+				this_time = time.time()
+				if cpuTemp is not None:
+					self.success+=1
+				else:
+					self.failure+=1
+					cpuTemp=0.00
+				self.cpu_data_set.append( (float(this_time),cpuTemp) )
 		return
 
 	def start_logging(self):
@@ -793,7 +826,7 @@ class DhtLog:
 	def __init__(self, dhtInterval):
 		self.dhtInterval = dhtInterval
 	def __init__(self):
-		self.dhtInterval = 3
+		self.dhtInterval = 6
 
 	def log(self):
 		while continueLogging:
@@ -1010,15 +1043,16 @@ class PyRAPLLog:
 		pyRAPL.setup(devices=[pyRAPL.Device.PKG])
 		return
 
-	def create_meter(self, meterLabel):
-		this.meter = pyRAPL.Measurement(meterLabel)
-		return meter
+	def create_meter(self, paramString):
+		self.meter = pyRAPL.Measurement(paramString)
+		return
 
 	def compile_energy(self, meter):
 		self.pyraplDataSet.append( (float(meter.timestamp), meter.result) )
 		return
 
-	def rebuild_logger(self):
+	def rebuild_logger(self, valueToBeTrashed):
+		create_meter()
 		return
 
 	def print_data(self):
