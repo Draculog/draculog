@@ -18,6 +18,7 @@ if len(sys.argv) > 1:
 	if 'e' in sys.argv:
 		otherEnergy=True
 
+seconds = 45
 #Find a way to list all sockets
 pyRAPL.setup(devices=[pyRAPL.Device.PKG])
 
@@ -71,4 +72,6 @@ if otherEnergy:
 	print("Running FuncB()....")
 
 	energyusage.evaluate(funcB, 40, pdf=False, locations=["California"], year=2021)
+
+
 

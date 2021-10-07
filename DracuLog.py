@@ -506,7 +506,7 @@ class Manager:
 #			self.gather_energy_data()
 #			self.combine_energy_data()
 
-		csvFileName = sourceDir+csvFile
+		csvFileName = csvFile
 		print("Saving all data to " + csvFileName)
 		basic_header_keys = ["Run Number", "Parameters", "Executable", "Results File", "Baseline CPU Temp"]
 		if runDhtTempLog:
