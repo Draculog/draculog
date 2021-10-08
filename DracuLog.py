@@ -547,6 +547,9 @@ class Manager:
 					wattRunOff["wattHoursCool"] = dict["wattHoursCool"].insert(0,"Watt Hours Cool:")
 
 				data_header = list(self.loggers.keys())
+				if runEnergyLog and usePyRAPL:
+					data_header.remove('pyrapl')
+				
 				csvWriter.writerow(data_header)
 				print("Data to store in CSV")
 				print(data_header)
@@ -574,7 +577,7 @@ class Manager:
 							continue
 						if key == "wattsWarm" or key == "wattsCool":
 							continue
-						if key == "pyralp":
+						if key == "pyrapl":
 							continue
 						for data in dict[key]:
 							if round(data[0]) == round(t):
