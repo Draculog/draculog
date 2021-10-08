@@ -470,14 +470,25 @@ class Manager:
 		return
 
 	def round_robin(self):
-		count = 0
-		while CPUTemperature().temperature <= (baselineTemp):
-			number = 0
-			if number >= sys.maxsize:
+		if onPI:
+			count = 0
+			while CPUTemperature().temperature <= (baselineTemp):
 				number = 0
-			else:
-				number = number + 1
-			count+=1
+				if number >= sys.maxsize:
+					number = 0
+				else:
+					number = number + 1
+				count+=1
+		else:
+			count = 0
+			while round(psutil.sensors_temperatures()['coretemp'][0][1]) <= (baselineTemp):
+				number = 0
+				if number >= sys.maxsize:
+					number = 0
+				else:
+					number = number + 1
+				count+=1
+
 
 	def warm_up(self):
 		self.warmupStart = time.time()
@@ -492,13 +503,20 @@ class Manager:
 		print("Delta Warm Up time is " + str(self.warmupDelta))
 
 	def cool_down(self):
-		self.cooldownStart = time.time()
-		while round(CPUTemperature().temperature) > (baselineTemp - 3):
-			#print("TOO WARM, COOLING " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp - 3))
-			time.sleep(5)
-		self.cooldownEnd = time.time()
-		self.cooldownDelta = self.cooldownEnd - self.cooldownStart
-		print("Delta Cool Down time is " + str(self.cooldownDelta))
+		if onPI:
+			self.cooldownStart = time.time()
+			while round(CPUTemperature().temperature) > (baselineTemp - 3):
+				#print("TOO WARM, COOLING " + str(CPUTemperature().temperature) + " -> " + str(baselineTemp - 3))
+				time.sleep(5)
+			self.cooldownEnd = time.time()
+			self.cooldownDelta = self.cooldownEnd - self.cooldownStart
+			print("Delta Cool Down time is " + str(self.cooldownDelta))
+		else:
+			self.cooldownStart = time.time()
+			while round(psutil.sensors_temperatures()['coretemp'][0][1]) > (baselineTemp - 3):
+				time.sleep(5)
+			self.cooldownEnd = time.time()
+			self.cooldownDelta = self.cooldownEnd - self.cooldownStartprint("Delta Cool Down time is " + str(self.cooldownDelta))
 
 	def data_to_csv(self):
 		global csvFile
