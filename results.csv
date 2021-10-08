@@ -1,5 +1,4 @@
-Run Number:,0,Parameters:,300000 s,Executable:,sort,Results File:,Source/sorts/300000 s_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,2092894620.0,Total Energy (MilliWatt Hours):,0.0
-Script Delta:,93.56580328941345,Script Start:,1633554346.1836188,Script End:,1633554439.749422
+Run Number:,0,Parameters:,300000 s,Executable:,sort,Results File:,Source/sorts/300000 s_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,2092894620.0,Total Energy (MilliWatt Hours):,0.0,Script Delta:,93.56580328941345,Script Start:,1633554346.1836188,Script End:,1633554439.749422
  
 time,cpu,load,pyrapl
 1633554346.1817925,29.0,0.0
@@ -19,8 +18,7 @@ time,cpu,load,pyrapl
 1633554430.2514167,51.0,1.59
 1633554436.255472,52.0,1.62
  
-Run Number:,1,Parameters:,300000 f,Executable:,sort,Results File:,Source/sorts/300000 f_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,2191408095.0,Total Energy (MilliWatt Hours):,0.0
-Script Delta:,96.78511905670166,Script Start:,1633554445.758361,Script End:,1633554542.5434802
+Run Number:,1,Parameters:,300000 f,Executable:,sort,Results File:,Source/sorts/300000 f_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,2191408095.0,Total Energy (MilliWatt Hours):,0.0,Script Delta:,96.78511905670166,Script Start:,1633554445.758361,Script End:,1633554542.5434802
  
 time,cpu,load,pyrapl
 1633554445.7575614,38.0,1.52
@@ -41,8 +39,7 @@ time,cpu,load,pyrapl
 1633554535.8295498,55.0,1.89
 1633554541.8356283,56.0,1.9
  
-Run Number:,2,Parameters:,300000 i,Executable:,sort,Results File:,Source/sorts/300000 i_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,3559447821.0,Total Energy (MilliWatt Hours):,0.0
-Script Delta:,153.58622241020203,Script Start:,1633554548.55293,Script End:,1633554702.1391525
+Run Number:,2,Parameters:,300000 i,Executable:,sort,Results File:,Source/sorts/300000 i_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,3559447821.0,Total Energy (MilliWatt Hours):,0.0,Script Delta:,153.58622241020203,Script Start:,1633554548.55293,Script End:,1633554702.1391525
  
 time,cpu,load,pyrapl
 1633554548.5518692,42.0,1.84
@@ -72,8 +69,7 @@ time,cpu,load,pyrapl
 1633554692.6693993,59.0,2.01
 1633554698.6753762,59.0,2.01
  
-Run Number:,3,Parameters:,300000 b,Executable:,sort,Results File:,Source/sorts/300000 b_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,7404756912.0,Total Energy (MilliWatt Hours):,0.0
-Script Delta:,318.6110384464264,Script Start:,1633554708.1495578,Script End:,1633555026.7605963
+Run Number:,3,Parameters:,300000 b,Executable:,sort,Results File:,Source/sorts/300000 b_results.txt,Baseline CPU Temp:,60,Total Energy (Micro Joules):,7404756912.0,Total Energy (MilliWatt Hours):,0.0,Script Delta:,318.6110384464264,Script Start:,1633554708.1495578,Script End:,1633555026.7605963
  
 time,cpu,load,pyrapl
 1633554708.148286,47.0,1.85
