@@ -367,7 +367,10 @@ class Manager:
 			self.count_down(15)
 
 		for param in params_list:
-			time.sleep(6)
+			if runLoadLog:
+				print("Clearing Load Min Average by Sleeping for 60 seconds")
+				time.sleep(60)
+
 			global continueLogging
 			continueLogging = True
 			print("Starting Tests and Logging using -> " + param)
@@ -460,10 +463,14 @@ class Manager:
 					measures += 1
 			this_run["Avg Room Temp"] = dhtSum / measures
 
-		if usePyRAPL:
+		if runEnergyLog and usePyRAPL:
 			# Add energy value only
-			this_run["Total Energy (Micro Joules)"] = self.loggers['pyrapl'].meter.result.pkg[0]
-			this_run["Total Energy (MilliWatt Hours)"] = 0.0
+			try:
+				this_run["Total Energy (Micro Joules)"] = self.loggers['pyrapl'].meter.result.pkg[0]
+			except:
+				print("Idk why but this_run has no energy measure")
+				print(string(self.loggers['pyrapl'].meter.result.pkg[0]))
+			#this_run["Total Energy (MilliWatt Hours)"] = 0.0
 
 		global data_list
 		data_list.append(this_run)
@@ -533,7 +540,7 @@ class Manager:
 			basic_header_keys.append("Avg Volts")
 		if runEnergyLog and usePyRAPL:
 			basic_header_keys.append("Total Energy (Micro Joules)")
-			basic_header_keys.append("Total Energy (MilliWatt Hours)")
+			# basic_header_keys.append("Total Energy (MilliWatt Hours)")
 		time_header_keys = ["Script Delta", "Script Start", "Script End"]
 		if controlTemp:
 			time_header_keys.append(["Cooldown Delta", "Cooldown Start", "Cooldown End", "Warmup Delta", "Warmup Start", "Warmup End"])
@@ -567,7 +574,7 @@ class Manager:
 				data_header = list(self.loggers.keys())
 				if runEnergyLog and usePyRAPL:
 					data_header.remove('pyrapl')
-				
+
 				csvWriter.writerow(data_header)
 				print("Data to store in CSV")
 				print(data_header)
@@ -1125,6 +1132,3 @@ if runClean:
 	manager.data_to_csv()
 else:
 	manager.print_data_list()
-
-manager.print_data_list()
-
