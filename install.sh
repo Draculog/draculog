@@ -26,22 +26,10 @@ pip install pyRAPL pymongo pandas psutil
 chmod -R a+r /sys/class/powercap/intel-rapl
 
 # Now that everything is installed, build Config file and Params Sample file (possibly build directories to store everything)
-if [ -d Source/ ]
-then
-	echo "Source Dir already Found"
-	if [ -f Source/params.ini ]
-	then
-		echo "Sample params file already exists"
-	else
-		python3 Draculog.py bp
-else
-	mkdir Source/
-	echo "Made Source Dir & Sample params file"
+chmod +x Draculog.py
 
-if [ -f ReadMe.ini ]
-then
-	echo "ReadMe.ini/Config file already exists"
-else
-	python3 Draculog.py bc
+python3 Draculog.py bp
+mkdir Source/
+python3 Draculog.py bc
 
 

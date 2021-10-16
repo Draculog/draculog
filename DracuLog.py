@@ -13,6 +13,7 @@ runTest = False
 runConfig = False
 buildConfig = False
 buildParams = False
+runBaseline = False
 ### Pre Execution
 ##
 #
@@ -21,7 +22,7 @@ if len(sys.argv) > 1:
 		print("You are now using the testing version of the software with preassigned variables")
 		runTest = True
 	elif 'config' in sys.argv or 'c' in sys.argv:
-		print("Using config.ini file instead of prompts")
+		print("Using ReadMe.ini file instead of prompts")
 		runConfig = True
 	elif 'buildConfig' in sys.argv or 'bc' in sys.argv:
 		print("Will build config file then exit")
@@ -29,6 +30,10 @@ if len(sys.argv) > 1:
 	elif 'buildParam' in sys.argv or 'bp' in sys.argv:
 		print("Will build sample params file then exit")
 		buildParams = True
+	elif 'baseline' in sys.argv or 'b' in sys.argv:
+		print("Will only sit idle for x seconds (in config file) to gather baseline data")
+		runConfig = True
+		runBaseline = True
 	elif 'help' in sys.argv or 'h' in sys.argv:
 		print("Commands are as follows:\nconfig/c == Use the config.ini file (ReadMe.ini) instead of taking in input at run time\n")
 		print("builddConfig/bc == Build a stock config.ini file if you have deleted yours\n")
@@ -316,6 +321,80 @@ class Manager:
 				executable = filename
 		return
 
+	def run_baseline(self):
+
+		try:
+			configReader.read(configFileName)
+			bec = configReader.get("Parameters", "BaselineExecutionTime")
+		except:
+			bec = 60
+		if bec is None:
+			bec = 60
+
+		if runEnergyLog and useMakerHawk and not runTest and not usePyRAPL:
+			print("Please get your MakerHawk software ready, as there will be a 15 second count down once you hit enter below")
+			print("This is needed to align your Amp's CSV data from your Makerhawk with your other sensor data")
+			print("So make sure you clear the AMPS data/sensor/log in the Makerhawk software first please!")
+			confirm = input("Hit Enter, then a 15 second countdown will start.....")
+			self.count_down(15)
+
+		if runLoadLog:
+			print("Clearing Load Min Average by Sleeping for 60 seconds")
+			time.sleep(60)
+
+		global continueLogging
+		continueLogging = True
+
+		for key in self.loggers:
+			if key != "dht" and key != "pyrapl":
+				print("Starting logger for " + key)
+				self.loggers[key].start_logging()
+			if key == "dht":
+				print("Polling DHT")
+				self.loggers['dht'].poll_dht22()
+			if key == "pyrapl":
+				print("Building Meter for this run")
+				self.loggers['pyrapl'].create_meter(param)
+		if controlTemp:
+			self.warm_up()
+
+		### Script Execution Start
+		if usePyRAPL:
+			self.loggers['pyrapl'].meter.begin()
+
+		self.startTime =  time.time()
+
+		time.sleep(bec)
+
+		self.endTime = time.time()
+
+		if usePyRAPL:
+			self.loggers['pyrapl'].meter.end()
+		### Script Execution End
+
+		if runDhtTempLog:
+			print("Polling DHT")
+			self.loggers['dht'].poll_dht22()
+
+		continueLogging = False
+		self.elapsedTime = self.endTime - self.startTime
+		print("Elapsed time is " + str(self.elapsedTime))
+
+		if controlTemp:
+			self.cool_down()
+
+		if runDhtTempLog:
+			print("Polling DHT")
+			self.loggers['dht'].poll_dht22()
+
+		param="Baseline"
+		run_number=0
+		results_file_string="ResultsBaseline"
+		self.compile_data(param, run_number, results_file_string)
+
+		print("Done with gathering baseline data")
+		return
+
 	def build_loggers(self):
 		timeLog = TimeLog(timeInterval)
 		timeLog.build_logger()
@@ -565,11 +644,12 @@ class Manager:
 					#self.loggers["amps"] = "ampsKey"
 					self.loggers["watts"] = "wattsKey"
 					self.loggers["wattHours"] = "wattHourKey"
-					wattRunOff = {}
-					wattRunOff["wattsWarm"] = dict["wattsWarm"].insert(0,"Watts Warm:")
-					wattRunOff["wattsCool"] = dict["wattsCool"].insert(0,"Watts Cool:")
-					wattRunOff["wattHoursWarm"] = dict["wattHoursWarm"].insert(0,"Watt Hours Warm:")
-					wattRunOff["wattHoursCool"] = dict["wattHoursCool"].insert(0,"Watt Hours Cool:")
+					if controlTemp:
+						wattRunOff = {}
+						wattRunOff["wattsWarm"] = dict["wattsWarm"].insert(0,"Watts Warm:")
+						wattRunOff["wattsCool"] = dict["wattsCool"].insert(0,"Watts Cool:")
+						wattRunOff["wattHoursWarm"] = dict["wattHoursWarm"].insert(0,"Watt Hours Warm:")
+						wattRunOff["wattHoursCool"] = dict["wattHoursCool"].insert(0,"Watt Hours Cool:")
 
 				data_header = list(self.loggers.keys())
 				if runEnergyLog and usePyRAPL:
@@ -611,7 +691,7 @@ class Manager:
 
 					csvWriter.writerow(data_row)
 				csvWriter.writerow(" ")
-				if showTempCycles:
+				if controlTemp and showTempCycles:
 					for key in wattRunOff:
 						csvWriter.writerow(wattRunOff[key])
 		return
@@ -632,9 +712,11 @@ class Manager:
 				return
 			print("You used Makerhawk for energy logging")
 			print("Get ready to move your volts and amps files over to your source dir")
-			confirm = input("Press enter when you've finished importing the Volts and Watts csv's.....")
-			ampsFile = input("Please enter the name of your Amps File: ")
-			voltsFile = input("Please enter the name of your Volts File: " )
+			confirm = input("Press enter when you've finished importing the Amps and Volts csv's into your Source/dir folder (where you code is).....")
+			ampsFile = input("Please enter the name of your Amps File (Don't include Source/dir): ")
+			voltsFile = input("Please enter the name of your Volts File (Don't include Source/dir): " )
+			#ampsFile="/Amps.txt"
+			#voltsFile="Volts.txt"
 			print("Compiling data from " + ampsFile + " and " + voltsFile)
 			self.makerhawk = MakerHawk(ampsFile, voltsFile, sourceDir)
 			self.makerhawk.compile_energy()
@@ -646,15 +728,20 @@ class Manager:
 		global data_list
 		print("Parsing energy dictonary into the bigger data dictonary")
 		energyIndex = 0
+		runCoolDTime = 0.0
+		runWarmUpTime = 0.0
+		runEnergyCoolDPolls = 0
+		runEnergyWarmUpPolls = 0
 		for dict in data_list:
 			# get time data from this run first (warm up is pre, cool down is post)
 			# if warm up/cool down is <= 1s, skip that then
 			runTotalTime = dict["Script Delta"]
 			runEnergyTotalPolls = math.ceil(runTotalTime / energyInterval)
-			runCoolDTime = dict["Cooldown Delta"]
-			runEnergyCoolDPolls = math.floor(runCoolDTime / energyInterval)
-			runWarmUpTime = dict["Warmup Delta"]
-			runEnergyWarmUpPolls = math.floor(runWarmUpTime / energyInterval)
+			if controlTemp:
+				runCoolDTime = dict["Cooldown Delta"]
+				runEnergyCoolDPolls = math.floor(runCoolDTime / energyInterval)
+				runWarmUpTime = dict["Warmup Delta"]
+				runEnergyWarmUpPolls = math.floor(runWarmUpTime / energyInterval)
 			timeArray = dict["time"]
 			#print("Len Time: ", len(timeArray))
 			dict['Avg Volts'] = self.makerhawk.get_data_set()['volt']
@@ -672,7 +759,7 @@ class Manager:
 			wattHWarm = []
 
 			# this gives us the energy used pre script execution
-			if runEnergyWarmUpPolls >= 1:
+			if runEnergyWarmUpPolls >= 1 and controlTemp:
 				wH = 0
 				warmUpPollLimit = energyIndex + runEnergyWarmUpPolls
 				while energyIndex < warmUpPollLimit:
@@ -706,7 +793,7 @@ class Manager:
 			#print("Main Should be " + str(runEnergyTotalPolls) + ", it is " + str(energyIndex))
 
 			# this gives us the energy used after execution
-			if runEnergyCoolDPolls >= 1:
+			if runEnergyCoolDPolls >= 1 and controlTemp:
 				#print("Going to - ", (energyIndex + runEnergyCoolDPolls))
 				#print("From " + str(energyIndex) + " and " + str(runEnergyCoolDPolls))
 				wH = 0
@@ -1115,14 +1202,16 @@ if buildConfig or buildParams:
 
 manager.read_configs()
 
-manager.build_source_code()
-
-manager.read_params()
+if not runBaseline:
+	manager.build_source_code()
+	manager.read_params()
 
 manager.build_loggers()
 
-#manager.test()
-manager.run_loggers()
+if runBaseline:
+	manager.run_baseline()
+else:
+	manager.run_loggers()
 
 if runClean:
 	if runEnergyLog and useMakerHawk:
