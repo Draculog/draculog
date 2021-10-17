@@ -322,6 +322,9 @@ class Manager:
 		return
 
 	def run_baseline(self):
+		param="Baseline"
+		run_number=0
+		results_file_string="ResultsBaseline"
 
 		try:
 			configReader.read(configFileName)
@@ -387,9 +390,6 @@ class Manager:
 			print("Polling DHT")
 			self.loggers['dht'].poll_dht22()
 
-		param="Baseline"
-		run_number=0
-		results_file_string="ResultsBaseline"
 		self.compile_data(param, run_number, results_file_string)
 
 		print("Done with gathering baseline data")
