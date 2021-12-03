@@ -136,6 +136,8 @@ ampsFile = "file"
 
 class Manager:
 # Start Manager
+	run_number = 0
+
 	def __init__(self):
 		self.loggers = {}
 
@@ -323,7 +325,7 @@ class Manager:
 
 	def run_baseline(self):
 		param="Baseline"
-		run_number=0
+		# run_number=0
 		results_file_string="ResultsBaseline"
 
 		try:
@@ -348,6 +350,10 @@ class Manager:
 		global continueLogging
 		continueLogging = True
 
+		self.rebuild_loggers(self.run_number)
+		if runDhtTempLog:
+			self.loggers['dht'].dht_data_set.clear()
+
 		for key in self.loggers:
 			if key != "dht" and key != "pyrapl":
 				print("Starting logger for " + key)
@@ -367,7 +373,9 @@ class Manager:
 
 		self.startTime =  time.time()
 
+		### Actual Script Execution
 		time.sleep(bec)
+		### End of Actual Script Execution
 
 		self.endTime = time.time()
 
@@ -390,9 +398,11 @@ class Manager:
 			print("Polling DHT")
 			self.loggers['dht'].poll_dht22()
 
-		self.compile_data(param, run_number, results_file_string)
+		self.compile_data(param, self.run_number, results_file_string)
 
-		print("Done with gathering baseline data")
+		print("Done with gathering baseline data, taking a 10 second break")
+		time.sleep(10)
+		self.run_number+=1
 		return
 
 	def build_loggers(self):
@@ -436,7 +446,7 @@ class Manager:
 
 	def run_loggers(self):
 		print("Running Tests with all params using given source code")
-		run_number = 0
+		# run_number = 0
 
 		if runEnergyLog and useMakerHawk and not runTest and not usePyRAPL:
 			print("Please get your MakerHawk software ready, as there will be a 10 second count down once you hit enter below")
@@ -446,21 +456,29 @@ class Manager:
 			self.count_down(15)
 
 		for param in params_list:
+
+			if param.lower() == "baseline":
+				print("Running Baseline")
+				self.run_baseline()
+				continue
+
 			if runLoadLog:
 				print("Clearing Load Min Average by Sleeping for 60 seconds")
 				time.sleep(60)
+
 
 			global continueLogging
 			continueLogging = True
 			print("Starting Tests and Logging using -> " + param)
 
+			# Change this for other languages
 			command = "./"+sourceDir+executable+" "+param
 
 			results_file_string = sourceDir+param+"_results.txt"
 			results_file = open(results_file_string, 'w')
 
-			if run_number > 0:
-				self.rebuild_loggers(run_number)
+			if self.run_number > 0:
+				self.rebuild_loggers(self.run_number)
 				if runDhtTempLog: # TODO Hot Fix issue where dht's data isn't cleared each run (idk why)
 					self.loggers['dht'].dht_data_set.clear()
 
@@ -505,10 +523,11 @@ class Manager:
 				print("Polling DHT")
 				self.loggers['dht'].poll_dht22()
 
-			self.compile_data(param, run_number, results_file_string)
-			run_number+=1
+			self.compile_data(param, self.run_number, results_file_string)
+			self.run_number+=1
 
-		print("Done with running all tests")
+		print("Done with running all tests, taking a 10 second break")
+		time.sleep(10)
 
 		return
 
