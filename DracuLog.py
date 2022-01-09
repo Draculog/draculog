@@ -54,7 +54,8 @@ import multiprocessing # used to heat up the cpu
 import shutil # used in results folder creation/deletion, install
 import configparser # install using pip
 import re # used to read in params file (stripping whitespace and checking for #
-import csv # used for creation of CSV file of raw data
+import csv # used for creation of CSV file of raw data (dict to CSV)
+import json # used for creation of JSON file of raw data (dict to JSON)
 import shutil # used to copy raw csv's elsewhere
 import math # used for energy intergration
 # Imports for external attachments
@@ -113,6 +114,8 @@ usePyRAPL = False
 showTempCycles = False
 runLoadLog = False
 runClean = False
+toCSV = False
+toJSON = False
 
 # Variables to read at execution
 cpuInterval = 6
@@ -126,7 +129,8 @@ configFileName = "ReadMe.ini"
 sourceDir = "Source/"
 paramsFile = "params.ini"
 executable = "file"
-csvFile = "raw_data.csv"
+csvFile = "raw_data_csv.csv"
+jsonFile = "raw_data_json.json"
 voltsFile = "file"
 ampsFile = "file"
 
@@ -143,21 +147,21 @@ class Manager:
 
 	def build_config_file(self):
 		with open(configFileName, 'w+') as configFile:
-			configFile.write("### DracuLog Configutation File")
-			configFile.write("##")
-			configFile.write("#")
-			configFile.write("[Description]")
-			configFile.write("# In this file contains the base parameters that our script uses to run your code and measure various")
-			configFile.write("# 'sensors' built into the script and your machine. Using a Pi 4b, a DHT22 sensor attached to the Pi, as well as")
-			configFile.write("# an energy monitoring device (such as a Makerhawk USB C energy monitor or a Log4 full fat energy monitor), this software")
-			configFile.write("# can measure how much energy your system used to run a script as well as your temperatures that occured")
-			configFile.write("# while running your script")
-			configFile.write(" ")
-			configFile.write("[Instructions]")
-			configFile.write("# If you want to change a parameter, simply copy what was there and replace it with your own variables.")
-			configFile.write("# Our software looks specifically for the variables named here, so do not change those.")
-			configFile.write(" ")
-			configFile.write("[Parameters]")
+			configFile.write("### DracuLog Configutation File\n")
+			configFile.write("##\n")
+			configFile.write("#\n")
+			configFile.write("[Description]\n")
+			configFile.write("# In this file contains the base parameters that our script uses to run your code and measure various\n")
+			configFile.write("# 'sensors' built into the script and your machine. Using a Pi 4b, a DHT22 sensor attached to the Pi, as well as\n")
+			configFile.write("# an energy monitoring device (such as a Makerhawk USB C energy monitor or a Log4 full fat energy monitor), this software\n")
+			configFile.write("# can measure how much energy your system used to run a script as well as your temperatures that occured\n")
+			configFile.write("# while running your script\n")
+			configFile.write("\n")
+			configFile.write("[Instructions]\n")
+			configFile.write("# If you want to change a parameter, simply copy what was there and replace it with your own variables.\n")
+			configFile.write("# Our software looks specifically for the variables named here, so do not change those.\n")
+			configFile.write("\n")
+			configFile.write("[Parameters]\n")
 			configFile.write("# Your source files location, followed by the name of your params file")
 			configFile.write("SourceDir = Source/sorts/")
 			configFile.write("ParamsFile = params.ini")
@@ -179,9 +183,13 @@ class Manager:
 			configFile.write("PyRAPL = False")
 			configFile.write("EnergyInterval = 6")
 			configFile.write("ShowTempCycles = False")
-			configFile.write("# If you want to intergrate the data into a single CSV")
+			configFile.write("# If you want to compile the data into a record(s)")
 			configFile.write("CleanData = False")
-			configFile.write("CsvFile = raw_data.csv")
+			configFile.write("# Choose if you want CSV or JSON (or both) Formating of your data")
+			configFile.write("ToCSV = False")
+			configFile.write("CsvFile = raw_data_csv.csv")
+			configFile.write("ToJSON = False")
+			configFile.write("JSONFile = raw_data_json.json")
 		return
 
 	def build_params_file(self):
@@ -193,7 +201,7 @@ class Manager:
 
 	def read_configs(self):
 		# TODO make it so that if you delete or move the config file, we create a new one with NONE/False
-		global sourceDir,paramsFile,csvFile,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
+		global sourceDir,paramsFile,csvFile,jsonFile,toCSV,toJSON,controlTemp,baselineTemp,runCpuTempLog,cpuInterval,runDhtTempLog
 		global dhtInterval,runLoadLog,loadInterval,runEnergyLog,energyInterval,useMakerHawk,usePyRAPL,runClean
 
 		if runConfig:
@@ -226,7 +234,10 @@ class Manager:
 			showTempCycles = configReader.getboolean("Parameters", "EnergyLog")
 
 			runClean = configReader.getboolean("Parameters", "CleanData")
+			toCSV = configReader.getboolean("Parameters", "ToCSV")
 			csvFile = configReader.get("Parameters", "CsvFile")
+			toJSON = configReader.getboolean("Parameters", "ToJSON")
+			jsonFile = configReader.get("Parameters", "JSONFile")
 		else:
 			choice = input("Do you want to have a baseline temp? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
@@ -273,10 +284,16 @@ class Manager:
 			else:
 				runEnergyLog = False
 
-			choice = input("Do you want to get a CSV? Y/N: ").upper()
+			choice = input("Do you want to get a compiled record? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
 				runClean = True
-				csvFile = input("Please enter the CSV File name you want: ")
+				choice = input("Do you want a CSV File, a JSON file, or Both? C/J/B: ").upper()
+				if choice == "C" or choice == "CSV" or choice == "B" or choice == "BOTH":
+					toCSV = True
+					csvFile = input("Please enter the CSV File name you want: ")
+				if choice == "J" or choice == "JSON" or choice == "B" or choice == "BOTH":
+					toJSON = True
+					jsonFile = input("Please enter the JSON file name you want: ")
 			else:
 				runClean = False
 		return
@@ -713,6 +730,16 @@ class Manager:
 				if controlTemp and showTempCycles:
 					for key in wattRunOff:
 						csvWriter.writerow(wattRunOff[key])
+		return
+
+	def data_to_json(self):
+		global jsonFile
+
+		with open(jsonFile, 'w') as json:
+			for run in data_list:
+				json.dump(run, json)
+				json.write(",\n")
+
 		return
 
 	def print_data_list(self):
@@ -1237,6 +1264,7 @@ if runClean:
 		manager.gather_energy_data()
 		manager.combine_energy_data()
 		#manager.makerhawk.print_data()
-	manager.data_to_csv()
-else:
-	manager.print_data_list()
+	if toCSV:
+		manager.data_to_csv()
+	if toJSON:
+		manager.data_to_json()
