@@ -7,6 +7,7 @@
 
 # Basic Variable to determine what our script does
 import sys
+import os # used all over for operations
 
 onPI = True
 runTest = False
@@ -46,7 +47,6 @@ if len(sys.argv) > 1:
 ### Imports
 ##
 # Imports for basic system processes
-import os # used all over for operations
 import time # used to time everything (and to sleep for xInterval)
 import subprocess # used for code execution
 import threading # used to multi thread the loggers/sensors
@@ -221,8 +221,9 @@ class Manager:
 			runCpuTempLog = configReader.getboolean("Parameters", "CpuTempLog")
 			cpuInterval = configReader.getint("Parameters", "CpuInterval")
 
-			runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
-			dhtInterval = configReader.getint("Parameters", "DhtInterval")
+			if onPI:
+				runDhtTempLog = configReader.getboolean("Parameters", "DhtTempLog")
+				dhtInterval = configReader.getint("Parameters", "DhtInterval")
 
 			runLoadLog = configReader.getboolean("Parameters", "LoadLog")
 			loadInterval = configReader.getint("Parameters", "LoadInterval")
@@ -251,12 +252,13 @@ class Manager:
 				runCpuTempLog = True
 				cpuInterval = int(input("Please enter the CPU polling interval: "))
 
-			choice = input("Do you want to measure Room temp (DHT22)? Y/N: ").upper()
-			if choice == "Y" or choice == "YES":
-				runDhtTempLog = True
-				dhtInterval = int(input("Please enter the DHT polling interval: "))
-			else:
-				runDhtTempLog = False
+			if onPI:
+				choice = input("Do you want to measure Room temp (DHT22)? Y/N: ").upper()
+				if choice == "Y" or choice == "YES":
+					runDhtTempLog = True
+					dhtInterval = int(input("Please enter the DHT polling interval: "))
+				else:
+					runDhtTempLog = False
 
 			choice = input("Do you want to measure Loads? Y/N: ").upper()
 			if choice == "Y" or choice == "YES":
@@ -440,9 +442,22 @@ class Manager:
 			self.loggers['dht'] = dht
 		if runEnergyLog:
 			if usePyRAPL:
-				pyrapl = PyRAPLLog()
-				pyrapl.build_logger()
-				self.loggers['pyrapl'] = pyrapl
+				try:
+					pyrapl = PyRAPLLog()
+					pyrapl.build_logger()
+					self.loggers['pyrapl'] = pyrapl
+				except:
+					print("Looks like your system has un-chmod'ed a RAPL file. Attemping to fix this issu using this command:")
+					print("sudo chmod -R a+r /sys/class/powercap/intel-rapl")
+					os.system("sudo chmod -R a+r /sys/class/powercap/intel-rapl")
+				try:
+					pyrapl = PyRAPLLog()
+					pyrapl.build_logger()
+					self.loggers['pyrapl'] = pyrapl
+				except:
+					print("Whoops, there some other RAPL/PYRAPL error. Oops!")
+					print("Exiting Application Now")
+					sys.exit()
 		return
 
 	def count_down(self, timelimit):
@@ -735,10 +750,10 @@ class Manager:
 	def data_to_json(self):
 		global jsonFile
 
-		with open(jsonFile, 'w') as json:
+		with open(jsonFile, "w+") as jsonFileStream:
 			for run in data_list:
-				json.dump(run, json)
-				json.write(",\n")
+				json.dump(run, jsonFileStream)
+				jsonFileStream.write(",\n")
 
 		return
 
@@ -952,6 +967,7 @@ class CpuLog:
 					self.failure+=1
 					cpuTemp=0.00
 				self.cpu_data_set.append( (float(this_time),cpuTemp) )
+				time.sleep(self.cpuInterval)
 		return
 
 	def start_logging(self):

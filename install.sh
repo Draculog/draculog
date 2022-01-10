@@ -7,7 +7,7 @@ apt-get update
 #apt-get upgrade
 
 # Clang install
-apt-get install clang-11 --install-suggests 
+apt-get install clang-11 --install-suggests
 
 # GCC install
 apt-get install build-essential manpages-dev
@@ -23,6 +23,7 @@ pip3 install adafruit-circuitpython-dht adafruit-circuitpython-lis3dh
 # Python PyRAPL Tools and permissions
 pip install pyRAPL pymongo pandas psutil
 
+# RAPL Needs this file to have a+r permissions, which isn't enabled by default. The code also checks for this, and will run this command as root if this fails
 chmod -R a+r /sys/class/powercap/intel-rapl
 
 # Now that everything is installed, build Config file and Params Sample file (possibly build directories to store everything)
