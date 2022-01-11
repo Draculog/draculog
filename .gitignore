@@ -3,3 +3,7 @@
 /Source/sorts
 .DracuLog.py.swp
 DracuLog.py.save
+# Default ignored files
+/shelf/
+/workspace.xml
+.idea/
