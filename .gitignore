@@ -1,9 +1,19 @@
+# Git Ignore file for Draculog
+
+# Folder(s) that could contain testing code
+/Source/
 /power-c
 /sorts
-/Source/sorts
+
+# Folder(s) that contain python cache files
+/Modules/__pycache__/
+/Modules/Sensors/__pycache__/
+
+# Nano Specific modification temp files
 .DracuLog.py.swp
 DracuLog.py.save
-# Default ignored files
+
+# Default ignored files for PyCharm
 /shelf/
 /workspace.xml
 .idea/
