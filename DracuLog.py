@@ -52,7 +52,7 @@ import subprocess # used for code execution
 import threading # used to multi thread the loggers/sensors
 import multiprocessing # used to heat up the cpu
 import shutil # used in results folder creation/deletion, install
-import configparser # install using pip
+import configparser # Using to read a config file
 import re # used to read in params file (stripping whitespace and checking for #
 import csv # used for creation of CSV file of raw data (dict to CSV)
 import json # used for creation of JSON file of raw data (dict to JSON)
