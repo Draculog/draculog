@@ -1,5 +1,11 @@
 # Git Ignore file for Draculog
 
+# Things to toggle on/off during testing
+install.sh
+
+# Files that are constantly regenerated during testing
+ReadMe.ini
+
 # Folder(s) that could contain testing code
 /Source/
 /power-c
