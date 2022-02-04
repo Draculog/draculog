@@ -32,7 +32,7 @@ echo "Installing things"
 #python3 Draculog.py bp
 if [ -d "Source/" ];
 then
-  rm -rf Source
+  echo "Source already Created"
 fi
 mkdir Source/
 #python3 Draculog.py bc

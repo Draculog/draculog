@@ -15,10 +15,8 @@ defaultParamsFile = "Source/params.ini"
 class Installer:
     def __init__(self, firstTime=False, skipInstall=False):
         if firstTime and not skipInstall:
-            print("Doing Fresh Install")
             self.Fresh_Install()
         elif not firstTime and not skipInstall:
-            print("Doing Reinstall")
             self.Reinstall()
         return
 
@@ -51,13 +49,17 @@ class Installer:
         configure.build_params_file()
         return
 
+
+class CodeCompiler:
+    def __init__(self):
+        return
+
     @staticmethod
-    def ReCompile(sourceDirectory):
+    def Compile_Code(self, sourceDirectory):
         # Checks if String has a "/" at the end
         if sourceDirectory[:(len(sourceDirectory) - 1)] != '/':
             sourceDirectory += "/"
 
-        # ReCompiles Code
         if not os.path.isdir(sourceDirectory):
             print("ERROR, Given Source Directory is DNE")
             return False
@@ -66,9 +68,28 @@ class Installer:
             print("ERROR, source dir Makefile DNE")
             return False
 
+        # Run Makefile
+        print("Compiling Source Files using given Makefile")
+        try:
+            os.system("cd " + sourceDir + "&& make")
+        except:
+            print("ERROR running your Makefile, consult Makefile Error code")
+            return False
+
         return True
 
-
+    @staticmethod
+    def FindCompiledCode(self, sourceDirectory):
+        found = False
+        for file in os.listdir(sourceDirectory):
+            if os.path.isfile(sourceDirectory + file) and os.access(sourceDirectory + file, os.X_OK):
+                executable = file
+                found = True
+        if found:
+            return executable
+        else:
+            print("You Stupd, DNE Bitch")
+            return "empty"
 class Config:
 
     def __init__(self):
