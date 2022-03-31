@@ -60,7 +60,6 @@ def Call_GreenCode_API(command):
         return None
 
 ### Code Set Up Functions
-# TODO Create a test where we make a Makefile for a fake user
 # Creates an MakeFile for the User's Code
 def Create_Makefile(path, codeFile):
     # TODO Add Dynamic Compiler Variable
@@ -80,7 +79,6 @@ def Create_Makefile(path, codeFile):
         return False
     return True
 
-# TODO Create a test where we just make 2 text files, one with code and without
 # Creates an Executable File from the User's Code
 def Create_User_Code(path, codeFile, codeString, testing=False):
     # Write the submitted code to the code file, and if it's None run a 60-second baseline measure
