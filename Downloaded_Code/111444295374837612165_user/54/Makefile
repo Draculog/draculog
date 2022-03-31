@@ -1,5 +1,0 @@
-COM=gcc
-FLAGS=-o
-all: main
-main: 111444295374837612165_54.cpp
-	$(COM) $(FLAGS) code 111444295374837612165_54.cpp
