@@ -1,8 +1,10 @@
 
 
 import pyRAPL
+from datetime import datetime as dt
+import os
 
-from Sensor import GlobalSensorValues as Globe
+from Sensors.Sensor import GlobalSensorValues as Globe
 
 class PyRAPL:
     def __init__(self, name="PyRAPL", interval=Globe.interval, organizeMe=True):
@@ -11,8 +13,15 @@ class PyRAPL:
         self.name = "Sensor-" + name
         self.meter = None
         self.data = []
-        pyRAPL.setup(devices=[pyRAPL.Device.PKG])
-        self.organizeMe = organizeMe
+        try:
+		pyRAPL.setup(devices=[pyRAPL.Device.PKG])
+	except PermissionError:
+		print("ERROR-*-\tPyRAPL Doesn't have the permissions it needs" + str(dt.now())
+		print("ERROR-^-\tExecuting the following Command:")
+		print("ERROR-^-\tsudo chmod -R a+r /sys/class/powercap/intel-rapl")
+		os.system("sudo chmod -R a+r /sys/class/powercap/intel-rapl")
+
+	self.organizeMe = organizeMe
         return
 
     def CallMe(self):

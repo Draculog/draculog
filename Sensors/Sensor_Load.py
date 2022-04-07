@@ -2,7 +2,7 @@ import os
 import threading
 import time
 
-from Sensor import GlobalSensorValues as Globe
+from Sensors.Sensor import GlobalSensorValues as Globe
 
 class Load:
     def __init__(self, name="Load", interval=Globe.interval, organizeMe=True):

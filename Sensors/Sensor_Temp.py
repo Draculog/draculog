@@ -5,7 +5,7 @@ import time
 
 import psutil
 
-from Sensor import GlobalSensorValues as Globe
+from Sensors.Sensor import GlobalSensorValues as Globe
 
 class Temperature:
     def __init__(self, name="Temp", interval=Globe.interval, organizeMe=True):
