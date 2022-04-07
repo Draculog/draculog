@@ -8,3 +8,5 @@ DracuLog.py.save
 /shelf/
 /workspace.xml
 .idea/
+Sensors/__pycache__/
+__pycache__/
