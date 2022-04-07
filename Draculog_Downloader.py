@@ -60,7 +60,7 @@ mainCodeDirectory = "Downloaded_Code"
 def Create_Makefile(path, codeFile, User_Code_Exists):
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     if not User_Code_Exists:
-        GreenCode.Log_Time("UPDATE-*-\tUser code DNE, skipping", dt.now())
+        GreenCode.Log_Time("WARNING-*-\tUser code DNE, skipping", dt.now())
         return
     # TODO-MultiCompiler Add Dynamic Compiler Variable
     compiler = "gcc"
@@ -82,14 +82,14 @@ def Create_Makefile(path, codeFile, User_Code_Exists):
 # Creates an Executable File from the User's Code
 def Create_User_Code(path, codeFile, codeString):
     # Write the submitted code to the code file, and if it's None run a 60-second baseline measure
-    file = open(path + "/" + codeFile, "w")
     if codeString is not None:
+        file = open(path + "/" + codeFile, "w")
         file.write(codeString)
+        file.close()
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     else:
-        GreenCode.Log_Time("ERROR-*-\tUser Code Doesn't Exist, Skipping", dt.now(), Override=True)
-
-    file.close()
+        GreenCode.Log_Time("WARNING-*-\tUser Code Doesn't Exist, Skipping", dt.now())
+        
     return codeString is not None
 
 #
@@ -119,15 +119,15 @@ def Setup_UnCompiledCode(PulledJSON):
         # Checks if the User has a directory and if not, makes one
         userpath = mainCodeDirectory + "/" + u
         if not os.path.isdir(userpath):
-            GreenCode.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now(), OnlyPrint=verbose)
+            GreenCode.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now())
             os.mkdir(userpath)
 
         # Checks if the User already has a submission of this number, and if not makes one
         submissionPath = userpath + "/" + s
         if os.path.isdir(submissionPath):
-            GreenCode.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(), OnlyPrint=verbose)
+            GreenCode.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now())
             shutil.rmtree(submissionPath)
-        GreenCode.Log_Time("UPDATE-*-\tMaking a new subdirectory for user "+u+"'s submission "+s, dt.now(), OnlyPrint=verbose)
+        GreenCode.Log_Time("UPDATE-*-\tMaking a new subdirectory for user "+u+"'s submission "+s, dt.now())
 
         os.mkdir(submissionPath)
 
