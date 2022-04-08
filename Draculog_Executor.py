@@ -86,6 +86,7 @@ def Compile_List_Of_Users():
             line = DLCode.readline()
             if line not in Downloaded_Code_List:
                 Downloaded_Code_List.append(line)
+        DLCode.close()
     # If there is no downloaded code file, return none for error control
     else:
         thisTime = dt.now()
@@ -197,6 +198,7 @@ def Execute_User_Code():
 
         # Save it as a file in user path
         json.dump(result_json, Results_File)
+        Results_File.close()
 
         # Save New User Path
         Add_Executed_User_To_File(User_Path, round(time.time()))
@@ -213,6 +215,7 @@ def Clean_Up():
             line = EXCode.readline()
             if line not in Executed_Code_List:
                 Executed_Code_List.append(line)
+        EXCode.close()
 
     # Moves all Files in old directory to new directory
     for index in range(0, len(Downloaded_Code_List)):
@@ -222,6 +225,9 @@ def Clean_Up():
 
         # Delete Old User Path
         shutil.rmtree(Downloaded_Code_List[index])
+
+    # Remove no longer needed file
+    os.remove(Globe.Newly_Downloaded_Code_Str)
 
     return
 
@@ -258,6 +264,7 @@ def main():
     Clean_Up()
 
     # Delete the control Text File
+    control_file.close()
     os.remove(Globe.Executing_Code_Str)
 
     thisTime = dt.now()
@@ -270,5 +277,11 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Application now", dt.now(), Override=True)
+        GreenCode.Log_Time("FATAL-*-\tError: " + str(Exception), dt.now(), Override=True)
+        os.remove(Globe.Executing_Code_Str)
+        sys.exit(1)
     sys.exit(0)

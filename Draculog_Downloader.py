@@ -60,7 +60,7 @@ mainCodeDirectory = Globe.User_Code_Directory_Name
 def Create_Makefile(path, codeFile, User_Code_Exists):
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     if not User_Code_Exists:
-        GreenCode.Log_Time("WARNING-*-\tUser code DNE, skipping", dt.now())
+        GreenCode.Log_Time("WARNING-*-\tUser code DNE, skipping Makefile", dt.now())
         return
     # TODO-MultiCompiler Add Dynamic Compiler Variable
     compiler = "gcc"
@@ -88,7 +88,7 @@ def Create_User_Code(path, codeFile, codeString):
         file.close()
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     else:
-        GreenCode.Log_Time("WARNING-*-\tUser Code Doesn't Exist, Skipping", dt.now())
+        GreenCode.Log_Time("WARNING-*-\tUser Code Doesn't Exist, Skipping Code Creation", dt.now())
         
     return codeString is not None
 
@@ -166,6 +166,7 @@ def main():
     Setup_UnCompiledCode(UnCompiledCode)
 
     # Delete the control Text File
+    control_file.close()
     os.remove(Globe.Downloading_Code_Str)
 
     thisTime = dt.now()
