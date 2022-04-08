@@ -1,4 +1,4 @@
-
+import sys
 
 import pyRAPL
 from datetime import datetime as dt
@@ -13,15 +13,18 @@ class PyRAPL:
         self.name = "Sensor-" + name
         self.meter = None
         self.data = []
+        self.organizeMe = organizeMe
         try:
-		pyRAPL.setup(devices=[pyRAPL.Device.PKG])
-	except PermissionError:
-		print("ERROR-*-\tPyRAPL Doesn't have the permissions it needs" + str(dt.now())
-		print("ERROR-^-\tExecuting the following Command:")
-		print("ERROR-^-\tsudo chmod -R a+r /sys/class/powercap/intel-rapl")
-		os.system("sudo chmod -R a+r /sys/class/powercap/intel-rapl")
-
-	self.organizeMe = organizeMe
+            pyRAPL.setup(devices=[pyRAPL.Device.PKG])
+        except PermissionError:
+            print("ERROR-*-\tPyRAPL Doesn't have the permissions it needs" + str(dt.now()))
+            print("ERROR-^-\tExecuting the following Command:")
+            print("ERROR-^-\t'sudo chmod -R a+r /sys/class/powercap/intel-rapl'")
+            try:
+                os.system("sudo chmod -R a+r /sys/class/powercap/intel-rapl")
+            except Exception:
+                print("FATAL-*-\tPyRAPL is not currently working, please consult documentation")
+                sys.exit(1)
         return
 
     def CallMe(self):

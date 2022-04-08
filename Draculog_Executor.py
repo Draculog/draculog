@@ -27,17 +27,18 @@ JSON (Resultant Obj from execution) = {
     id: int,
     submissionId: int,
     result:{
-        length: delta time (int, UNIX),
         start time: start time (int, UNIX),
         end time: end time (int, UNIX),
-        energyConsumed: MicroJoules (int),
-        sensor 1:[measure_data, m_data, ...],
-        ...
-        sensor N:[m_data, ...]
+        delta time: end time - start time (int, UNIX),
+        measurements: {
+            Sensor 1 name: [measurements],
+            ...
+            Sensor N name: [measurements]
+            }
+        other sensor measurements (str) (not correlated to time): data (varying, but in this case int)
     }
 }
 """
-
 
 # For Basic System Operations
 from datetime import datetime as dt

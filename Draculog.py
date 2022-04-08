@@ -75,6 +75,7 @@ class SharedDraculogFunctions:
     ### Logging Functions
     # Takes in an Error string and the time this error happened, then logs it to a log file
     def Log_Time(self, action, timeGiven, OnlyPrint=False, Override=False):
+        # TODO-Logging Keep log file under 100 lines in length
         if OnlyPrint and not Override:
             print(action + " @ " + str(timeGiven))
             return
@@ -89,3 +90,5 @@ class SharedDraculogFunctions:
             self.LogFile.close()
             self.LogFile = None
         return
+
+

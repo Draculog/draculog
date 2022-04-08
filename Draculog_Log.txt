@@ -1,0 +1,78 @@
+DS##-	Download Starting was done @ 2022-04-07 18:51:01.408427
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.114391
+UPDATE-*-	Making a new subdirectory for user 100209551339791924855's submission 52 was done @ 2022-04-07 18:51:22.119401
+WARNING-*-	User Code Doesn't Exist, Skipping was done @ 2022-04-07 18:51:22.122077
+WARNING-*-	User code DNE, skipping was done @ 2022-04-07 18:51:22.124382
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.129766
+UPDATE-*-	Making a new subdirectory for user 101925998289740959633's submission 53 was done @ 2022-04-07 18:51:22.136140
+WARNING-*-	User Code Doesn't Exist, Skipping was done @ 2022-04-07 18:51:22.139208
+WARNING-*-	User code DNE, skipping was done @ 2022-04-07 18:51:22.141333
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.147032
+UPDATE-*-	Making a new subdirectory for user 111444295374837612165's submission 54 was done @ 2022-04-07 18:51:22.153226
+WARNING-*-	User Code Doesn't Exist, Skipping was done @ 2022-04-07 18:51:22.156140
+WARNING-*-	User code DNE, skipping was done @ 2022-04-07 18:51:22.158269
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.163466
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 55 was done @ 2022-04-07 18:51:22.169384
+WARNING-*-	User Code Doesn't Exist, Skipping was done @ 2022-04-07 18:51:22.172210
+WARNING-*-	User code DNE, skipping was done @ 2022-04-07 18:51:22.174732
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.179933
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 56 was done @ 2022-04-07 18:51:22.186207
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.195323
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 57 was done @ 2022-04-07 18:51:22.201251
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.210372
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 58 was done @ 2022-04-07 18:51:22.216518
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.225866
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 59 was done @ 2022-04-07 18:51:22.231894
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.241256
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 60 was done @ 2022-04-07 18:51:22.247100
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.256587
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 61 was done @ 2022-04-07 18:51:22.262548
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.271864
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 62 was done @ 2022-04-07 18:51:22.278089
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.287134
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 63 was done @ 2022-04-07 18:51:22.293255
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.302994
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 64 was done @ 2022-04-07 18:51:22.309092
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.318142
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 65 was done @ 2022-04-07 18:51:22.324416
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.334431
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 66 was done @ 2022-04-07 18:51:22.340421
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.350166
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 67 was done @ 2022-04-07 18:51:22.356903
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.366521
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 68 was done @ 2022-04-07 18:51:22.373641
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.383265
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 69 was done @ 2022-04-07 18:51:22.389993
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.399669
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 70 was done @ 2022-04-07 18:51:22.406501
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.416530
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 71 was done @ 2022-04-07 18:51:22.423319
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.432424
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 72 was done @ 2022-04-07 18:51:22.439150
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.447741
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 73 was done @ 2022-04-07 18:51:22.454130
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.463122
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 74 was done @ 2022-04-07 18:51:22.469182
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.478632
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 75 was done @ 2022-04-07 18:51:22.484564
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.494151
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 76 was done @ 2022-04-07 18:51:22.500182
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.509669
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 77 was done @ 2022-04-07 18:51:22.515323
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.524651
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 78 was done @ 2022-04-07 18:51:22.530293
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.539603
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 79 was done @ 2022-04-07 18:51:22.545622
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.555363
+UPDATE-*-	Making a new subdirectory for user 115005222949393991754's submission 80 was done @ 2022-04-07 18:51:22.561400
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.570876
+UPDATE-*-	Making a new subdirectory for user 100209551339791924855's submission 86 was done @ 2022-04-07 18:51:22.576973
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.586491
+UPDATE-*-	Making a new subdirectory for user 110311933563980527519's submission 87 was done @ 2022-04-07 18:51:22.592706
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.602269
+UPDATE-*-	Making a new subdirectory for user 110311933563980527519's submission 88 was done @ 2022-04-07 18:51:22.608487
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.617571
+UPDATE-*-	Making a new subdirectory for user 110311933563980527519's submission 89 was done @ 2022-04-07 18:51:22.623638
+UPDATE-*-	Submission already exists, removing previous submission was done @ 2022-04-07 18:51:22.633085
+UPDATE-*-	Making a new subdirectory for user 108956959564457742267's submission 90 was done @ 2022-04-07 18:51:22.639281
+DF##-	Download Finished was done @ 2022-04-07 18:51:22.647126
