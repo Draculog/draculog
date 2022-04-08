@@ -2,6 +2,8 @@
 ### Abstract    - Downloading/Uploading Hook for Green Code and DracuLog Integration & Global Variables
 ## Created by Daniel Jacoby alongside Dr. Joshua Gross, Aaron Helman, and Austin Folster
 #
+import shutil
+
 
 class GlobalValues:
     # Total Sensor count
@@ -17,6 +19,7 @@ class GlobalValues:
     Measure_CPU_Energy = False
 
     # String Version of File names (used as control variables)
+    User_Code_Directory_Name = "Downloaded_Code"
     Downloading_Code_Str = "Downloading_Code.txt"
     Newly_Downloaded_Code_Str = "Newly_Downloaded_Code.txt"
     Executing_Code_Str = "Executing_Code.txt"
@@ -29,6 +32,7 @@ class GlobalValues:
 import json
 import requests
 import os
+import sys
 from datetime import datetime as time
 
 
@@ -91,4 +95,26 @@ class SharedDraculogFunctions:
             self.LogFile = None
         return
 
+### Functions for Basic Maintenance and Testing
+# Removes all Global Files and Directories
+def Clean():
+    shutil.rmtree(GlobalValues.User_Code_Directory_Name)
+    os.remove(GlobalValues.Downloading_Code_Str)
+    os.remove(GlobalValues.Newly_Downloaded_Code_Str)
+    os.remove(GlobalValues.Executing_Code_Str)
+    os.remove(GlobalValues.Newly_Executed_Code_str)
+    os.remove(GlobalValues.Uploading_Code_Str)
+    os.remove(GlobalValues.Newly_Uploaded_Code_str)
+    os.remove(GlobalValues.Log_File_Str)
+    return
+
+# Basic Maintenance Functions for running tests
+def main():
+    if len(sys.argv) > 1:
+        if "Clean" in sys.argv:
+            Clean()
+
+if __name__ == "__main__":
+    main()
+    sys.exit(0)
 

@@ -53,7 +53,7 @@ else:
     Downloaded_File = open(Globe.Newly_Downloaded_Code_Str, "a+")
 
 # Directory Variables
-mainCodeDirectory = "Downloaded_Code"
+mainCodeDirectory = Globe.User_Code_Directory_Name
 
 ### Code Set Up Functions
 # Creates an MakeFile for the User's Code

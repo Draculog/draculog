@@ -216,7 +216,7 @@ def Clean_Up():
 
     # Moves all Files in old directory to new directory
     for index in range(0, len(Downloaded_Code_List)):
-        allFilesInDir = os.listdir(Downloaded_Code_List[index])
+        allFilesInDir = os.listdir(Downloaded_Code_List[index].replace("\n", ""))
         for file in allFilesInDir:
             os.rename(Downloaded_Code_List[index] + file, Executed_Code_List[index] + file)
 
