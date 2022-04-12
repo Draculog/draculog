@@ -4,11 +4,17 @@ import pyRAPL
 from datetime import datetime as dt
 import os
 
-from Sensors.Sensor import GlobalSensorValues as Globe
+try:
+    from Sensor import GlobalSensorValues as Globe
+    from Sensor import SensorThread
+except ModuleNotFoundError as e:
+    from Sensors.Sensor import GlobalSensorValues as Globe
+    from Sensors.Sensor import SensorThread
 
 class PyRAPL:
     def __init__(self, name="PyRAPL", interval=Globe.interval, organizeMe=True):
         super().__init__()
+        self.thread = None
         self.interval = interval
         self.name = "Sensor-" + name
         self.meter = None
@@ -27,14 +33,19 @@ class PyRAPL:
                 sys.exit(1)
         return
 
-    def CallMe(self):
-        print("Hi, I'm " + self.name + " running at " + self.interval)
+    def Call_Me(self):
+        print("Hi, I'm " + self.name + " running at ", self.interval)
         return
 
-    def Build_Logger(self, function):
+    def Build_Logger(self, Index, function):
+        if Globe.IsOnLaptop:
+            return None
         sName = function()
         self.meter = pyRAPL.Measurement(sName)
-        return
+        # For integration into main execution
+        self.thread = SensorThread()
+        self.data.clear()
+        return self.thread
 
     def Start_Logging(self):
         self.meter.begin()

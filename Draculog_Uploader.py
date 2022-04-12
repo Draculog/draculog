@@ -62,12 +62,39 @@ verbose = Globe.verbose
 log = Globe.log
 control_file = None
 
+# Temporary Control Variable for Upload Problems
+testing = True
 
-### Json Setup Functions
-# Creates a JSON of all the newly run User code
-def Compile_Json():
+Executed_Code_List = []
+
+### User Path List Setup
+#
+def Compile_List_Of_Users():
+    global Executed_Code_List
+    if os.path.isfile(Globe.Newly_Executed_Code_str):
+        EXCode = open(Globe.Newly_Executed_Code_str, "r+")
+        EXCode_Content = EXCode.read()
+        Executed_Code_List = EXCode_Content.split("\n")
+        EXCode.close()
+        Executed_Code_List.pop()
+    else:
+        thisTime = dt.now()
+        GreenCode.Log_Time("FATAL-*-\tNo Downloaded Code List Found", thisTime)
+        return False
+    return True
+
+### Uploading To GreenCode Functions
+#
+def Find_And_Upload():
+
+    if testing:
+        fileStr = "Downloaded_Code/115005222949393991754/80_Executed-1649627793/Results.json"
+        if GreenCode.Upload_To_GreenCode(fileStr):
+            print("SUCCESS")
+        else:
+            print("FAILURE")
+
     return
-
 
 ### Main Execution Build Section
 def main():
@@ -88,22 +115,18 @@ def main():
         sys.exit(2)
 
     # Make a control Text File
-    control_file = open(Globe.Uploading_Code_Str, "w")
+    # control_file = open(Globe.Uploading_Code_Str, "w")
 
     # Do Upload Stuff
-    # Compile Results into JSON format (Gather all new JSON files)
-    ## To do this, find the file containing all executed code (labeled as SubmissionId_Ex-Timestamp)
-    ## Then append that results json file into overall Json object (containing all executed/measured code)
-    ## Then, move all files from there into a new directory labeled as SubmissionId_Ex-Timestamp_Up-Timestamp
-
-    newJsonResults = None
-    # Upload all new Results into JSON format
-    result = GreenCode.Upload_To_GreenCode(newJsonResults)
-    if result is not None:
-        sys.exit(1)
+    # if not Compile_List_Of_Users():
+    #     sys.exit(1)
+    # Loop through all user directories in Downloaded_Code folder
+    Find_And_Upload()
+    # If Results.json exists, upload it to Green Code
+    # Then, move all files from there into a new directory labeled as SubmissionId_Ex-Timestamp_Up-Timestamp
 
     # Delete the control Text File
-    os.remove(Globe.Uploading_Code_Str)
+    # os.remove(Globe.Uploading_Code_Str)
 
     thisTime = dt.now()
     if verbose:

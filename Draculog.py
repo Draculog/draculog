@@ -7,16 +7,20 @@ import shutil
 
 class GlobalValues:
     # Total Sensor count
-    sensor_count = 4
+    sensor_count = 2
 
     # Variables used for special execution
     verbose = True
     log = True
+    timeoutSeconds = 1000
 
     # Variables used to control what to log
     Measure_CPU_Temps = False
     Measure_Load_Avgs = False
     Measure_CPU_Energy = False
+
+    # Executable Strs
+    Executable_Str = "code"
 
     # String Version of File names (used as control variables)
     User_Code_Directory_Name = "Downloaded_Code"
@@ -44,7 +48,7 @@ class SharedDraculogFunctions:
         self.headers = {'Content-Type': 'application/json',
                         'Authorization': 'Bearer {0}'.format(self.greenCodeApiToken)}
         self.downloadToken = "notCompiled"
-        self.uploadToken = "upload"
+        self.uploadToken = "uploadResults"
         self.LogFile = None
 
     ### API Functions
@@ -65,16 +69,31 @@ class SharedDraculogFunctions:
             return None
 
     # Calls Green code to upload a user's JSON result to Green Code's website
-    def Upload_To_GreenCode(self, jsonResult):
+    def Upload_To_GreenCode(self, jsonResultFile):
+        response = None
         apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.uploadToken)
-        response = requests.post(apiCall, json=jsonResult)
+        try:
+            file = open(jsonResultFile, "rb")
+            fileObj = {"json_file": file}
+        except Exception as e:
+            self.Log_Time("ERROR-*-\tFile not found, skipping " + jsonResultFile, time.now())
+            return False
+        try:
+            response = requests.post(apiCall, files=fileObj)
+        except requests.exceptions.HTTPError as HTTPError:
+            thisTime = time.now()
+            self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error ", thisTime)
+            return False
         if response.status_code == 200:
-            return None
+            thisTime = time.now()
+            self.Log_Time("UPDATE-*-\tUploading Code Succeeded", thisTime)
+            return True
         else:
-            thisTime = time.today()
-            self.Log_Time("ERROR-*-\tUploading Code Failed", thisTime)
-            self.Log_Time("ERROR-^-\tResponse: " + str(response.raise_for_status()), thisTime)
-            return response.json()
+            thisTime = time.now()
+            self.Log_Time("FATAL-*-\tUploading Code Failed", thisTime)
+            self.Log_Time("ERROR-^-\tResponse: ", thisTime)
+            self.Log_Time(str(response.raise_for_status()), thisTime)
+            return False
 
     ### Logging Functions
     # Takes in an Error string and the time this error happened, then logs it to a log file

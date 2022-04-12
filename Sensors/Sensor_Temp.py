@@ -5,7 +5,10 @@ import time
 
 import psutil
 
-from Sensors.Sensor import GlobalSensorValues as Globe
+try:
+    from Sensor import GlobalSensorValues as Globe
+except ModuleNotFoundError as e:
+    from Sensors.Sensor import GlobalSensorValues as Globe
 
 class Temperature:
     def __init__(self, name="Temp", interval=Globe.interval, organizeMe=True):
@@ -20,23 +23,28 @@ class Temperature:
         return
 
     def Call_Me(self):
-        print("Hi, I'm " + self.name + " running at " + self.interval)
+        print("Hi, I'm " + self.name + " running at ", self.interval)
         return
 
-    def Build_Logger(self, function=None):
+    def Build_Logger(self, Index, function=None):
         if function is None:
             print("error: No function argument was passed, returning without building a logger.")
             return
-        self.thread = threading.Thread(target=function, name=self.name)
-        return
+        self.thread = threading.Thread(target=function, name=self.name+"_"+Index)
+        self.data.clear()
+        return self.thread
 
     def Start_Logging(self):
         self.thread.start()
         return
 
     def Log(self):
-        self.cpuTemp = 0.0
         while Globe.continueLogging:
+            # This is to catch and skip psutil errors on Danny's Laptop
+            if Globe.IsOnLaptop:
+                self.data.append((float(time.time()), 33.33))
+                time.sleep(self.interval)
+                continue
             try:
                 # Grabs sensors, then the CPU specific temp, then PKG temp, then temp
                 cpuTemp = psutil.sensors_temperatures()['coretemp'][0][1]
@@ -55,10 +63,7 @@ class Temperature:
         return
 
     def End_Logging(self):
-        data_copy = self.data.copy()
-        self.data.clear()
-        self.thread.join()
-        return data_copy
+        return self.Get_Data()
 
     def Get_Data(self):
         return self.data

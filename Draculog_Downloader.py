@@ -57,25 +57,24 @@ mainCodeDirectory = Globe.User_Code_Directory_Name
 
 ### Code Set Up Functions
 # Creates an MakeFile for the User's Code
-def Create_Makefile(path, codeFile, User_Code_Exists):
+def Create_Makefile(path, codeFile):
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
-    if not User_Code_Exists:
-        GreenCode.Log_Time("WARNING-*-\tUser code DNE, skipping Makefile", dt.now())
-        return
     # TODO-MultiCompiler Add Dynamic Compiler Variable
-    compiler = "gcc"
+    compiler = "g++"
     # TODO-MultiCompiler Add Dynamic Compiler Flags Variable
-    flags = "-o"
+    flags = "-std=c++11 -Wno-psabi -o"
     try:
         makefile = open(path + "/" + "Makefile", "w")
         makefile.write("COM=" + compiler + "\n")
         makefile.write("FLAGS=" + flags + "\n")
         makefile.write("all: main\n")
         makefile.write("main: " + codeFile + "\n")
-        makefile.write("\t$(COM) $(FLAGS) code " + codeFile + "\n")
+        makefile.write("\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n")
+        # - catches error when executing makefile, so like does it make a file?
         makefile.close()
-    except Exception as e:
-        GreenCode.Log_Time("ERROR-*-\tMakefile creation error: " + str(e), dt.now(), Override=True)
+    except Exception as myE:
+        GreenCode.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(), Override=True)
+
     return
 
 
@@ -88,18 +87,17 @@ def Create_User_Code(path, codeFile, codeString):
         file.close()
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     else:
-        GreenCode.Log_Time("WARNING-*-\tUser Code Doesn't Exist, Skipping Code Creation", dt.now())
+        GreenCode.Log_Time("WARNING-*-\tSubmission Code Doesn't Exist, Skipping and Deleting Directory", dt.now())
         
     return codeString is not None
 
-#
-def Add_User_Code_To_Wait_List(UserPath):
+# Adds Str User Path of Downloaded code to a separate file
+def Add_Downloaded_Path_To_File(UserPath):
     global Downloaded_File
     if Downloaded_File is None:
         Downloaded_File = open(Globe.Newly_Downloaded_Code_Str, "a+")
     Downloaded_File.write(UserPath + "\n")
     return
-
 
 # TODO Create a test where we pass it a list of dictionaries, passes if it makes them
 # Goes through all pulled users (from un-compiled code) and creates directories with a make file in them
@@ -133,12 +131,13 @@ def Setup_UnCompiledCode(PulledJSON):
 
         # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
         User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["codeString"])
-        Create_Makefile(submissionPath, codeFile, User_Code_Exists)
-
-        Add_User_Code_To_Wait_List(submissionPath)
+        if User_Code_Exists:
+            Create_Makefile(submissionPath, codeFile)
+            Add_Downloaded_Path_To_File(submissionPath)
+        else:
+            shutil.rmtree(submissionPath)
 
     return
-
 
 ### Main Execution Build Section
 def main():
@@ -150,9 +149,11 @@ def main():
     if os.path.isfile(Globe.Executing_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
         errorStr = "Executing" if os.path.isfile(Globe.Executing_Code_Str) else "Uploading"
         GreenCode.Log_Time("WAIT-*-\tDraculog is currently " + errorStr + " code. . . . .", dt.now(), Override=True)
+        os.remove(Globe.Downloading_Code_Str)
         sys.exit(2)
     if os.path.isfile(Globe.Downloading_Code_Str):
         GreenCode.Log_Time("WAIT-*-\tDraculog is currently still Downloading code. . . . .", dt.now(), Override=True)
+        os.remove(Globe.Downloading_Code_Str)
         sys.exit(2)
 
     # Make a control Text File
@@ -162,6 +163,7 @@ def main():
     # End Result is a File called "New_Downloaded_Code.txt" that contains all newly downloaded Submissions Paths
     UnCompiledCode = GreenCode.Download_From_GreenCode()
     if UnCompiledCode is None:
+        os.remove(Globe.Downloading_Code_Str)
         sys.exit(1)
     Setup_UnCompiledCode(UnCompiledCode)
 
@@ -181,8 +183,8 @@ if __name__ == "__main__":
     except Exception as e:
         GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(), Override=True)
         GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(), Override=True)
-        os.remove(Globe.Executing_Code_Str)
-        os.remove(Globe.Newly_Executed_Code_str)
+        os.remove(Globe.Downloading_Code_Str)
+        os.remove(Globe.Newly_Downloaded_Code_Str)
         sys.exit(1)
 
     sys.exit(0)
