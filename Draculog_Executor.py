@@ -133,8 +133,8 @@ def Combine_Data(sensor_data):
 def Compile_Data(user_id, submission_id, sensor_data, start_time, end_time, status):
     combined_sensor_data = Combine_Data(sensor_data)
     result_obj = {
-        "user_id": user_id,
-        "submission_id": submission_id,
+        "userId": user_id,
+        "submissionId": submission_id,
         "result": {
             "start_time": start_time,
             "end_time": end_time,

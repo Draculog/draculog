@@ -19,8 +19,9 @@ class GlobalValues:
     Measure_Load_Avgs = False
     Measure_CPU_Energy = False
 
-    # Executable Strs
+    # Special Unifying Strings
     Executable_Str = "code"
+    Results_Json_Str = "Results.json"
 
     # String Version of File names (used as control variables)
     User_Code_Directory_Name = "Downloaded_Code"
@@ -72,26 +73,24 @@ class SharedDraculogFunctions:
     def Upload_To_GreenCode(self, jsonResultFile):
         response = None
         apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.uploadToken)
-        try:
-            file = open(jsonResultFile, "rb")
-            fileObj = {"json_file": file}
-        except Exception as e:
-            self.Log_Time("ERROR-*-\tFile not found, skipping " + jsonResultFile, time.now())
-            return False
+        file = open(jsonResultFile, "rb")
+        fileObj = {"json_file": file}
+
         try:
             response = requests.post(apiCall, files=fileObj)
-        except requests.exceptions.HTTPError as HTTPError:
+        except requests.exceptions.HTTPError as e:
             thisTime = time.now()
-            self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error ", thisTime)
+            self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error Failed for " + jsonResultFile, thisTime)
+            self.Log_Time("FATAL-^-\tError is " + str(e), thisTime)
             return False
         if response.status_code == 200:
             thisTime = time.now()
-            self.Log_Time("UPDATE-*-\tUploading Code Succeeded", thisTime)
+            self.Log_Time("UPDATE-*-\tUploading Code Succeeded for " + jsonResultFile, thisTime)
             return True
         else:
             thisTime = time.now()
-            self.Log_Time("FATAL-*-\tUploading Code Failed", thisTime)
-            self.Log_Time("ERROR-^-\tResponse: ", thisTime)
+            self.Log_Time("FATAL-*-\tUploading Code Failed for " + jsonResultFile, thisTime)
+            self.Log_Time("FATAL-^-\tResponse: ", thisTime)
             self.Log_Time(str(response.raise_for_status()), thisTime)
             return False
 

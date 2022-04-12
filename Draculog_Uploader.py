@@ -66,6 +66,14 @@ control_file = None
 testing = True
 
 Executed_Code_List = []
+Uploaded_Code_List = []
+
+# List of Executed Code
+if not os.path.isfile(Globe.Newly_Uploaded_Code_str):
+    Uploaded_File = open(Globe.Newly_Uploaded_Code_str, "w+")
+else:
+    Uploaded_File = open(Globe.Newly_Uploaded_Code_str, "a+")
+
 
 ### User Path List Setup
 #
@@ -79,20 +87,59 @@ def Compile_List_Of_Users():
         Executed_Code_List.pop()
     else:
         thisTime = dt.now()
-        GreenCode.Log_Time("FATAL-*-\tNo Downloaded Code List Found", thisTime)
+        GreenCode.Log_Time("FATAL-*-\tNo Executed Code List Found", thisTime)
         return False
     return True
+
+# Adds Str User Path of Uploaded code to a separate file
+def Add_Executed_Path_To_File(UserPath, TimeStamp):
+    global Uploaded_File, Uploaded_Code_List
+    if Uploaded_File is None:
+        Uploaded_File = open(Globe.Newly_Executed_Code_str, "a+")
+    Uploaded_File.write(UserPath + "_Uploaded-" + str(TimeStamp) + "\n")
+    Uploaded_Code_List.append(UserPath + "_Uploaded-" + str(TimeStamp))
+    return
 
 ### Uploading To GreenCode Functions
 #
 def Find_And_Upload():
+    for UserPath in Executed_Code_List:
+        if not os.path.isfile(UserPath+"/"+Globe.Results_Json_Str):
+            GreenCode.Log_Time("ERROR-*-\tNo Results file found for Directory " + UserPath, time.time())
+            continue
 
-    if testing:
-        fileStr = "Downloaded_Code/115005222949393991754/80_Executed-1649627793/Results.json"
-        if GreenCode.Upload_To_GreenCode(fileStr):
-            print("SUCCESS")
-        else:
-            print("FAILURE")
+        # if testing:
+        #     resultsFile = open(UserPath + "/" + Globe.Results_Json_Str, "r+")
+        #     resultsFile.close()
+        #     Add_Executed_Path_To_File(UserPath, round(time.time()))
+        #     continue
+
+        if GreenCode.Upload_To_GreenCode(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
+            # Append Userpath if Upload successful
+            Add_Executed_Path_To_File(UserPath, round(time.time()))
+
+    return
+
+### Cleaning Up After Execution Functions
+# Moves all Files in Old directory (Downloaded_Code/UserId/SubmissionId)
+# Into new -> (Downloaded_Code/UserId/SubmissionId_Executed-TIMESTAMP)
+def Clean_Up():
+    global Executed_Code_List
+
+    # Moves all Files in old directory to new directory
+    for index in range(0, len(Executed_Code_List)):
+        allFilesInDir = os.listdir(Executed_Code_List[index])
+        if os.path.isdir(Executed_Code_List[index]):
+            shutil.rmtree(Executed_Code_List[index])
+        os.mkdir(Executed_Code_List[index])
+        for file in allFilesInDir:
+            os.rename(Executed_Code_List[index] + "/" + file, Executed_Code_List[index] + "/" + file)
+
+        # Delete Old User Path
+        shutil.rmtree(Executed_Code_List[index])
+
+    # Remove no longer needed file
+    os.remove(Globe.Newly_Executed_Code_str)
 
     return
 
@@ -115,29 +162,31 @@ def main():
         sys.exit(2)
 
     # Make a control Text File
-    # control_file = open(Globe.Uploading_Code_Str, "w")
+    control_file = open(Globe.Uploading_Code_Str, "w")
 
-    # Do Upload Stuff
-    # if not Compile_List_Of_Users():
-    #     sys.exit(1)
+    # Compile List of all users that executed code
+    if not Compile_List_Of_Users():
+        sys.exit(1)
+
     # Loop through all user directories in Downloaded_Code folder
     Find_And_Upload()
     # If Results.json exists, upload it to Green Code
     # Then, move all files from there into a new directory labeled as SubmissionId_Ex-Timestamp_Up-Timestamp
+    # Clean_Up()
 
     # Delete the control Text File
-    # os.remove(Globe.Uploading_Code_Str)
+    os.remove(Globe.Uploading_Code_Str)
 
     thisTime = dt.now()
     if verbose:
         print("Uploading Code Finished @ " + str(thisTime))
     if log:
         GreenCode.Log_Time("UF##-\tUpload Finished", thisTime)
-
     return
-
 
 # Main Execution
 if __name__ == "__main__":
+    # Try
     main()
+
     sys.exit(0)
