@@ -8,7 +8,7 @@ except ModuleNotFoundError as e:
     from Sensors.Sensor import GlobalSensorValues as Globe
 
 class Load:
-    def __init__(self, name="Load", interval=Globe.interval, organizeMe=True):
+    def __init__(self, name="Load", interval=Globe.interval, organizeMe=True, threadMe=True):
         self.interval = interval
         self.name = "Sensor-" + name
         self.thread = None

@@ -163,6 +163,11 @@ def Build_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tBuilding all sensors", time.time())
     Sensors_Threads.clear()
     for sensor in Sensors_List:
+        # This section is for sensors who don't need to be threaded
+        if not sensor.threadMe:
+            sensor.Build_Logger()
+            Sensors_Threads.append(sensor)
+            continue
         t = sensor.Build_Logger(str(Sensor_Index), function=sensor.Log)
         Sensors_Threads.append(t)
     Sensor_Index += 1
@@ -172,6 +177,9 @@ def Build_Sensor_Threads():
 def Start_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     for t in Sensors_Threads:
+        if t in Sensors_List:
+            t.Start_Logging()
+            continue
         t.start()
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
     return
@@ -179,6 +187,9 @@ def Start_Sensor_Threads():
 def Wait_For_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tWaiting for all sensors to finish", time.time())
     for t in Sensors_Threads:
+        if t in Sensors_List:
+            t.End_Logging()
+            continue
         t.join()
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
     return
@@ -213,7 +224,12 @@ def Execute_User_Code(status, commands):
 
 # Loops through User Path list (Downloaded Code List) and executes their code
 def Measure_User_Code():
+    global Sensors_Threads
     for User_Path in Downloaded_Code_List:
+        # Clears Sensors_Threads list to prevent memory leak
+        Sensors_Threads.clear()
+
+        # Initializes/Sets Control Variables
         SensorGlobe.continueLogging = True
         status = True
 

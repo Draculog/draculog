@@ -6,14 +6,13 @@ import os
 
 try:
     from Sensor import GlobalSensorValues as Globe
-    from Sensor import SensorThread
 except ModuleNotFoundError as e:
     from Sensors.Sensor import GlobalSensorValues as Globe
-    from Sensors.Sensor import SensorThread
 
 class PyRAPL:
-    def __init__(self, name="PyRAPL", interval=Globe.interval, organizeMe=True):
+    def __init__(self, name="PyRAPL", interval=Globe.interval, organizeMe=False, threadMe=False):
         super().__init__()
+        self.threadMe = threadMe
         self.thread = None
         self.interval = interval
         self.name = "Sensor-" + name
@@ -41,8 +40,6 @@ class PyRAPL:
         # if Globe.IsOnLaptop:
         #    return None
         self.meter = pyRAPL.Measurement(self.name)
-        # For integration into main execution
-        # self.thread = SensorThread()
         self.data = None
         return
 
@@ -61,9 +58,7 @@ class PyRAPL:
         self.meter.end()
         self.Compile_Energy_Data()
         self.meter = None
-        # data_copy = self.data.copy()
-        # self.data.clear()
-        return  # data_copy
+        return
 
     def Get_Data(self):
         return self.data.pkg[0]

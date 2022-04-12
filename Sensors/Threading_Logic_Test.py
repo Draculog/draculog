@@ -8,7 +8,7 @@ import Sensor_Temp
 import Sensor_PyRAPL
 from Sensor import GlobalSensorValues as Globe
 
-sensor_list = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(), Sensor_PyRAPL.PyRAPL(organizeMe=False)]
+sensor_list = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(), Sensor_PyRAPL.PyRAPL()]
 sensor_threads = []
 sensor_data = []
 start_time = 0
@@ -20,7 +20,7 @@ def Build_Sensor_Threads():
     print("Building all sensor threads")
     global sensor_threads
     for sensor in sensor_list:
-        if not sensor.organizeMe:
+        if not sensor.threadMe:
                 sensor.Build_Logger()
                 sensor_threads.append(sensor)
                 continue
