@@ -4,27 +4,40 @@ import time
 import threading
 import Sensor_Time
 import Sensor_Load
+import Sensor_Temp
+import Sensor_PyRAPL
 from Sensor import GlobalSensorValues as Globe
 
-sensor_list = [Sensor_Time.Time(), Sensor_Load.Load()]
+sensor_list = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(), Sensor_PyRAPL.PyRAPL(organizeMe=False)]
 sensor_threads = []
 sensor_data = []
 start_time = 0
 end_time = 0
+index = 0
 
 def Build_Sensor_Threads():
+    global index
     print("Building all sensor threads")
     global sensor_threads
     for sensor in sensor_list:
-        t = sensor.Build_Logger(sensor.Log)
+        if not sensor.organizeMe:
+                sensor.Build_Logger()
+                sensor_threads.append(sensor)
+                continue
+        t = sensor.Build_Logger(str(index), function=sensor.Log)
         print(t.name)
         sensor_threads.append(t)
+    index+=1
     print("All sensor threads built")
     return
 
 def Start_Sensor_Threads():
     print("Starting all sensor threads")
     for t in sensor_threads:
+        if t in sensor_list:
+                t.Start_Logging()
+                t.Call_Me()
+                continue
         print(t.name)
         t.start()
     print("All sensor threads started")
@@ -33,6 +46,9 @@ def Start_Sensor_Threads():
 def Wait_For_Sensor_Threads():
     print("Waiting for all sensor threads")
     for t in sensor_threads:
+        if t in sensor_list:
+                t.End_Logging()
+                continue
         t.join()
     print("All sensor threads done")
     time.sleep(1)

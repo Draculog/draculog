@@ -62,7 +62,7 @@ GreenCode = SharedDraculogFunctions()
 # TODO-Modularity To make Draculog more modular, I need to make this dynamic and not static
 from Sensors import Sensor_Time, Sensor_Temp, Sensor_Load, Sensor_PyRAPL
 Sensor_Index = 0
-Sensors_List = [Sensor_Time.Time(), Sensor_Load.Load()]
+Sensors_List = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(), Sensor_PyRAPL.PyRAPL(organizeMe=False)]
 Sensors_Threads = []
 
 # Control Variables
