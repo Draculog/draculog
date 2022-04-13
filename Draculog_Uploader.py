@@ -127,13 +127,13 @@ def Clean_Up():
     global Executed_Code_List
 
     # Moves all Files in old directory to new directory
-    for index in range(0, len(Executed_Code_List)):
+    for index in range(0, len(Uploaded_Code_List)):
         allFilesInDir = os.listdir(Executed_Code_List[index])
-        if os.path.isdir(Executed_Code_List[index]):
-            shutil.rmtree(Executed_Code_List[index])
-        os.mkdir(Executed_Code_List[index])
+        if os.path.isdir(Uploaded_Code_List[index]):
+            shutil.rmtree(Uploaded_Code_List[index])
+        os.mkdir(Uploaded_Code_List[index])
         for file in allFilesInDir:
-            os.rename(Executed_Code_List[index] + "/" + file, Executed_Code_List[index] + "/" + file)
+            os.rename(Executed_Code_List[index] + "/" + file, Uploaded_Code_List[index] + "/" + file)
 
         # Delete Old User Path
         shutil.rmtree(Executed_Code_List[index])
@@ -172,7 +172,7 @@ def main():
     Find_And_Upload()
     # If Results.json exists, upload it to Green Code
     # Then, move all files from there into a new directory labeled as SubmissionId_Ex-Timestamp_Up-Timestamp
-    # Clean_Up()
+    Clean_Up()
 
     # Delete the control Text File
     os.remove(Globe.Uploading_Code_Str)
@@ -186,7 +186,13 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    # Try
-    main()
+    try:
+        main()
+    except Exception as e:
+        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(), Override=True)
+        GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(), Override=True)
+        os.remove(Globe.Uploading_Code_Str)
+        os.remove(Globe.Newly_Uploaded_Code_str)
+        sys.exit(1)
 
     sys.exit(0)

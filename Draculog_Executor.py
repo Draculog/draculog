@@ -303,7 +303,7 @@ def Clean_Up():
     # print(Downloaded_Code_List)
 
     # Moves all Files in old directory to new directory
-    for index in range(0, len(Downloaded_Code_List)):
+    for index in range(0, len(Executed_Code_List)):
         allFilesInDir = os.listdir(Downloaded_Code_List[index])
         if os.path.isdir(Executed_Code_List[index]):
             shutil.rmtree(Executed_Code_List[index])
@@ -368,13 +368,13 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    # try:
-    main()
-    # except Exception as e:
-    #     GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(), Override=True)
-    #     GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(), Override=True)
-    #     os.remove(Globe.Executing_Code_Str)
-    #     #os.remove(Globe.Newly_Executed_Code_str)
-    #     sys.exit(1)
+    try:
+    	main()
+    except Exception as e:
+         GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(), Override=True)
+         GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(), Override=True)
+         os.remove(Globe.Executing_Code_Str)
+         os.remove(Globe.Newly_Executed_Code_str)
+         sys.exit(1)
 
     sys.exit(0)
