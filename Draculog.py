@@ -44,6 +44,7 @@ from datetime import datetime as time
 class SharedDraculogFunctions:
     def __init__(self):
         # API Variables
+        self.name = "GreenCode and Draculog Integration"
         self.greenCodeApiToken = ""
         self.greenCodeApiBase = "https://greencodemk2.herokuapp.com/code/"
         self.headers = {'Content-Type': 'application/json',
@@ -51,6 +52,10 @@ class SharedDraculogFunctions:
         self.downloadToken = "notCompiled"
         self.uploadToken = "uploadResults"
         self.LogFile = None
+
+    def Call_Me(self):
+        print("Hi, I'm " + self.name)
+        return
 
     ### API Functions
     # Calls Green Code to download all un-compiled code from Green Code's Website
@@ -73,11 +78,11 @@ class SharedDraculogFunctions:
     def Upload_To_GreenCode(self, jsonResultFile):
         response = None
         apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.uploadToken)
-        file = open(jsonResultFile, "rb")
-        fileObj = {"json_file": file}
+        jsonObj = json.loads(open(jsonResultFile, 'r+').read())
 
         try:
-            response = requests.post(apiCall, files=fileObj)
+            response = requests.post(apiCall, json=jsonObj)
+            print(response.text)
         except requests.exceptions.HTTPError as e:
             thisTime = time.now()
             self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error Failed for " + jsonResultFile, thisTime)
