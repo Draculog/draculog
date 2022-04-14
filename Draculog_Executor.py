@@ -40,9 +40,12 @@ JSON (Resultant Obj from execution) = {
 }
 """
 
-# For Basic System Operations
+# For Linux Time Operations
 from datetime import datetime as dt
 import time
+import pytz
+
+# For Basic Linux System Operations
 import sys
 import os
 
@@ -56,13 +59,19 @@ from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
 from Sensors.Sensor import GlobalSensorValues as SensorGlobe
+
 GreenCode = SharedDraculogFunctions()
+
+# TimeZone creation for logging
+tz = pytz.timezone(Globe.tzStr)
 
 # Sensors
 # TODO-Modularity To make Draculog more modular, I need to make this dynamic and not static
 from Sensors import Sensor_Time, Sensor_Temp, Sensor_Load, Sensor_PyRAPL
+
 Sensor_Index = 0
-Sensors_List = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(), Sensor_PyRAPL.PyRAPL(organizeMe=False)]
+Sensors_List = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(),
+                Sensor_PyRAPL.PyRAPL(organizeMe=False)]
 Sensors_Threads = []
 
 # Control Variables
@@ -95,8 +104,7 @@ def Compile_List_Of_Users():
         DLCode.close()
     # If there is no downloaded code file, return none for error control
     else:
-        thisTime = dt.now()
-        GreenCode.Log_Time("FATAL-*-\tNo Downloaded Code List Found", thisTime)
+        GreenCode.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
         return False
 
     return True
@@ -129,6 +137,7 @@ def Combine_Data(sensor_data):
 
     return combined_data
 
+
 # Compiles Given Data into a Single JSON Object
 def Compile_Data(user_id, submission_id, sensor_data, start_time, end_time, status):
     combined_sensor_data = Combine_Data(sensor_data)
@@ -149,6 +158,7 @@ def Compile_Data(user_id, submission_id, sensor_data, start_time, end_time, stat
 
     return result_obj
 
+
 # Adds Str User Path of Executed code to a separate file
 def Add_Executed_Path_To_File(UserPath, TimeStamp):
     global Executed_File, Executed_Code_List
@@ -157,6 +167,7 @@ def Add_Executed_Path_To_File(UserPath, TimeStamp):
     Executed_File.write(UserPath + "_Executed-" + str(TimeStamp) + "\n")
     Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
     return
+
 
 def Build_Sensor_Threads():
     global Sensors_Threads, Sensor_Index
@@ -174,6 +185,7 @@ def Build_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished building all sensors", time.time())
     return
 
+
 def Start_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     for t in Sensors_Threads:
@@ -183,6 +195,7 @@ def Start_Sensor_Threads():
         t.start()
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
     return
+
 
 def Wait_For_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tWaiting for all sensors to finish", time.time())
@@ -194,6 +207,7 @@ def Wait_For_Sensor_Threads():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
     return
 
+
 def Gather_Sensor_Data():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     measurements = []
@@ -202,6 +216,7 @@ def Gather_Sensor_Data():
     GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     return measurements
 
+
 def Execute_User_Code(status, commands):
     output = None
     start_time = time.time()
@@ -209,7 +224,8 @@ def Execute_User_Code(status, commands):
         # TODO Spin up other thread to wait X time for seg faults
         # TODO-MultiCompiler This is where I would need to know a the needed compiler for their code
         try:
-            output = subprocess.run(commands, timeout=timeoutSeconds, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            output = subprocess.run(commands, timeout=timeoutSeconds, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.STDOUT)
         except subprocess.TimeoutExpired:
             GreenCode.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
             status = False
@@ -221,6 +237,7 @@ def Execute_User_Code(status, commands):
     end_time = time.time()
     SensorGlobe.continueLogging = False
     return start_time, end_time, status
+
 
 # Loops through User Path list (Downloaded Code List) and executes their code
 def Measure_User_Code():
@@ -239,7 +256,7 @@ def Measure_User_Code():
 
         # Find the MakeFile and execute it (Build Source Code), else return that the status is false/failed
         if not os.path.isfile(User_Path + "/Makefile"):
-            GreenCode.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(), OnlyPrint=True)
+            GreenCode.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
             continue
         else:
             # Run the makefile, if it fails save that status (errors in their code)
@@ -250,7 +267,7 @@ def Measure_User_Code():
         # Checks to see if we've already run their code
         if os.path.isfile(User_Path + "/Results.json"):
             GreenCode.Log_Time("ERROR-*-\tUser's Submission @ " + User_Path + " already contains results, skipping",
-                               dt.now(), OnlyPrint=True)
+                               dt.now(tz), OnlyPrint=True)
             continue
         else:
             Results_File = open(User_Path + "/Results.json", "w+")
@@ -292,6 +309,7 @@ def Measure_User_Code():
 
     return
 
+
 ### Cleaning Up After Execution Functions
 # Moves all Files in Old directory (Downloaded_Code/UserId/SubmissionId)
 # Into new -> (Downloaded_Code/UserId/SubmissionId_Executed-TIMESTAMP)
@@ -319,13 +337,12 @@ def Clean_Up():
 
     return
 
+
 ### Main Execution Build Section
 def main():
-    thisTime = dt.now()
-    if verbose:
-        print("Execution Finished @ " + str(thisTime))
-    if log:
-        GreenCode.Log_Time("ES##-\tExecution Started", thisTime)
+
+    # Starting Log Statement
+    GreenCode.Log_Time("ES##-\tExecution Started", dt.now(tz))
 
     # Checks to see if we are already downloading, executing, or uploading code
     global control_file
@@ -358,23 +375,21 @@ def main():
     control_file.close()
     os.remove(Globe.Executing_Code_Str)
 
-    thisTime = dt.now()
-    if verbose:
-        print("Executing Code Finished @ " + str(thisTime))
-    if log:
-        GreenCode.Log_Time("EF##-\tExecution Finished", thisTime)
+    # Ending Log Statement
+    GreenCode.Log_Time("EF##-\tExecution Finished", dt.now(tz))
 
     return
+
 
 # Main Execution
 if __name__ == "__main__":
     try:
-    	main()
+        main()
     except Exception as e:
-         GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(), Override=True)
-         GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(), Override=True)
-         os.remove(Globe.Executing_Code_Str)
-         os.remove(Globe.Newly_Executed_Code_str)
-         sys.exit(1)
+        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
+        GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+        os.remove(Globe.Executing_Code_Str)
+        os.remove(Globe.Newly_Executed_Code_str)
+        sys.exit(1)
 
     sys.exit(0)

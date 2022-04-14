@@ -2,10 +2,12 @@
 ### Abstract    - Downloading/Uploading Hook for Green Code and DracuLog Integration & Global Variables
 ## Created by Daniel Jacoby alongside Dr. Joshua Gross, Aaron Helman, and Austin Folster
 #
-import shutil
 
+import pytz
 
 class GlobalValues:
+    # TimeZone String
+    tzStr = "America/Los_Angeles"
     # Total Sensor count
     sensor_count = 2
 
@@ -38,8 +40,8 @@ import json
 import requests
 import os
 import sys
+import shutil
 from datetime import datetime as time
-
 
 class SharedDraculogFunctions:
     def __init__(self):

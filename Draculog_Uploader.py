@@ -44,9 +44,12 @@ Users_Code/
           CPP_Code (Saved as userId_submissionId)
 """
 
-# For Basic System Operations
+# For Linux Time Operations
 from datetime import datetime as dt
 import time
+import pytz
+
+# For Basic Linux System Operations
 import sys
 import os
 import shutil
@@ -56,6 +59,9 @@ from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
 GreenCode = SharedDraculogFunctions()
+
+# TimeZone creation for logging
+tz = pytz.timezone(Globe.tzStr)
 
 # Control Variables
 verbose = Globe.verbose
@@ -86,7 +92,7 @@ def Compile_List_Of_Users():
         EXCode.close()
         Executed_Code_List.pop()
     else:
-        thisTime = dt.now()
+        thisTime = dt.now(tz)
         GreenCode.Log_Time("FATAL-*-\tNo Executed Code List Found", thisTime)
         return False
     return True
@@ -145,11 +151,9 @@ def Clean_Up():
 
 ### Main Execution Build Section
 def main():
-    thisTime = dt.now()
-    if verbose:
-        print("Uploading Code Started @ " + str(thisTime))
-    if log:
-        GreenCode.Log_Time("US##-\tUpload Started", thisTime)
+
+    # Starting Log Statement
+    GreenCode.Log_Time("US##-\tUpload Started", dt.now(tz))
 
     # Checks to see if we are already downloading, executing, or uploading code
     global control_file
@@ -177,20 +181,17 @@ def main():
     # Delete the control Text File
     os.remove(Globe.Uploading_Code_Str)
 
-    thisTime = dt.now()
-    if verbose:
-        print("Uploading Code Finished @ " + str(thisTime))
-    if log:
-        GreenCode.Log_Time("UF##-\tUpload Finished", thisTime)
-    return
+    # Ending Log Statement
+    GreenCode.Log_Time("UF##-\tUpload Finished", dt.now(tz))
+
 
 # Main Execution
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(), Override=True)
-        GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(), Override=True)
+        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
+        GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
         os.remove(Globe.Uploading_Code_Str)
         os.remove(Globe.Newly_Uploaded_Code_str)
         sys.exit(1)

@@ -28,9 +28,11 @@ Users_Code/
 
 # String Used for if user's don't have code submitted to GreenCode
 
-# For Linux System Operations
+# For Linux System Time Operations
 from datetime import datetime as dt
-import time
+import pytz
+
+# For Linux System Operation
 import sys
 import os
 import shutil
@@ -39,7 +41,11 @@ import shutil
 from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
+# API Connection to GreenCode
 GreenCode = SharedDraculogFunctions()
+
+# TimeZone creation for logging
+tz = pytz.timezone(Globe.tzStr)
 
 # Control Variables
 verbose = Globe.verbose
@@ -73,7 +79,7 @@ def Create_Makefile(path, codeFile):
         # - catches error when executing makefile, so like does it make a file?
         makefile.close()
     except Exception as myE:
-        GreenCode.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(), Override=True)
+        GreenCode.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(tz), Override=True)
 
     return
 
@@ -87,7 +93,7 @@ def Create_User_Code(path, codeFile, codeString):
         file.close()
     # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     else:
-        GreenCode.Log_Time("WARNING-*-\tSubmission Code Doesn't Exist, Skipping and Deleting Directory", dt.now())
+        GreenCode.Log_Time("WARNING-*-\tSubmission Code Doesn't Exist, Skipping and Deleting Directory", dt.now(tz))
         
     return codeString is not None
 
@@ -104,7 +110,7 @@ def Add_Downloaded_Path_To_File(UserPath):
 def Setup_UnCompiledCode(PulledJSON):
     # Make Main Directory
     if not os.path.isdir(mainCodeDirectory):
-        GreenCode.Log_Time("UPDATE-*-\tNo Main directory Found, Making new one", dt.now(), OnlyPrint=verbose)
+        GreenCode.Log_Time("UPDATE-*-\tNo Main directory Found, Making new one", dt.now(tz), OnlyPrint=verbose)
         os.mkdir(mainCodeDirectory)
 
     for submission in PulledJSON:
@@ -117,15 +123,15 @@ def Setup_UnCompiledCode(PulledJSON):
         # Checks if the User has a directory and if not, makes one
         userpath = mainCodeDirectory + "/" + u
         if not os.path.isdir(userpath):
-            GreenCode.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now())
+            GreenCode.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now(tz))
             os.mkdir(userpath)
 
         # Checks if the User already has a submission of this number, and if not makes one
         submissionPath = userpath + "/" + s
         if os.path.isdir(submissionPath):
-            GreenCode.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now())
+            GreenCode.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(tz))
             shutil.rmtree(submissionPath)
-        GreenCode.Log_Time("UPDATE-*-\tMaking a new subdirectory for user "+u+"'s submission "+s, dt.now())
+        GreenCode.Log_Time("UPDATE-*-\tMaking a new subdirectory for user "+u+"'s submission "+s, dt.now(tz))
 
         os.mkdir(submissionPath)
 
@@ -141,18 +147,19 @@ def Setup_UnCompiledCode(PulledJSON):
 
 ### Main Execution Build Section
 def main():
-    thisTime = dt.now()
-    GreenCode.Log_Time("DS##-\tDownload Starting", thisTime)
+
+    # Starting Log Statement
+    GreenCode.Log_Time("DS##-\tDownload Starting", dt.now(tz))
 
     # Checks to see if we are already downloading, executing, or uploading code
     global control_file
     if os.path.isfile(Globe.Executing_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
         errorStr = "Executing" if os.path.isfile(Globe.Executing_Code_Str) else "Uploading"
-        GreenCode.Log_Time("WAIT-*-\tDraculog is currently " + errorStr + " code. . . . .", dt.now(), Override=True)
+        GreenCode.Log_Time("WAIT-*-\tDraculog is currently " + errorStr + " code. . . . .", dt.now(tz), Override=True)
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(2)
     if os.path.isfile(Globe.Downloading_Code_Str):
-        GreenCode.Log_Time("WAIT-*-\tDraculog is currently still Downloading code. . . . .", dt.now(), Override=True)
+        GreenCode.Log_Time("WAIT-*-\tDraculog is currently still Downloading code. . . . .", dt.now(tz), Override=True)
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(2)
 
@@ -171,8 +178,8 @@ def main():
     control_file.close()
     os.remove(Globe.Downloading_Code_Str)
 
-    thisTime = dt.now()
-    GreenCode.Log_Time("DF##-\tDownload Finished", thisTime)
+    # Ending Log Statement
+    GreenCode.Log_Time("DF##-\tDownload Finished", dt.now(tz))
 
     return
 
@@ -181,8 +188,8 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(), Override=True)
-        GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(), Override=True)
+        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
+        GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
         os.remove(Globe.Downloading_Code_Str)
         os.remove(Globe.Newly_Downloaded_Code_Str)
         sys.exit(1)
