@@ -22,6 +22,8 @@ apt-get install python3-libgpiod
 
 #pip3 install adafruit-circuitpython-dht adafruit-circuitpython-lis3dh
 
+# Instal for mailing deamon
+apt-get install mailutils
 
 # Python PyRAPL Tools and permissions
 pip install pyRAPL
