@@ -2,6 +2,7 @@
 ### Abstract    - Downloading/Uploading Hook for Green Code and DracuLog Integration & Global Variables
 ## Created by Daniel Jacoby alongside Dr. Joshua Gross, Aaron Helman, and Austin Folster
 #
+import datetime
 
 import pytz
 
@@ -121,25 +122,17 @@ class SharedDraculogFunctions:
         return
 
 ### Functions for Basic Maintenance and Testing
-# Removes all Global Files and Directories
-def Clean():
-    shutil.rmtree(GlobalValues.User_Code_Directory_Name)
-    os.remove(GlobalValues.Downloading_Code_Str)
-    os.remove(GlobalValues.Newly_Downloaded_Code_Str)
-    os.remove(GlobalValues.Executing_Code_Str)
-    os.remove(GlobalValues.Newly_Executed_Code_str)
-    os.remove(GlobalValues.Uploading_Code_Str)
-    os.remove(GlobalValues.Newly_Uploaded_Code_str)
-    os.remove(GlobalValues.Log_File_Str)
+def Remove_Log_File():
+    os.remove("Draculog_Log.txt")
+    LogFile = open(GlobalValues.Log_File_Str, "w+")
+    LogFile.write("==========\tSTART OF DAY " + str(datetime.datetime.now(pytz.timezone(GlobalValues.tzStr))) + "\t==========\n")
     return
 
-# Basic Maintenance Functions for running tests
-def main():
-    if len(sys.argv) > 1:
-        if "Clean" in sys.argv:
-            Clean()
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        if "Remake_Log_File" in sys.argv:
+            Remove_Log_File()
+
     sys.exit(0)
 
