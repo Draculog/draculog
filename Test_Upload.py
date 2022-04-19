@@ -4,7 +4,7 @@ import sys
 from Draculog import SharedDraculogFunctions
 GreenCode = SharedDraculogFunctions()
 
-file = "Example_Results.json"
+file = "Results.json"
 
 if os.path.isfile(file):
     print("I can see the results example file")
