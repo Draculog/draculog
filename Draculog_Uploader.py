@@ -97,6 +97,7 @@ def Compile_List_Of_Users():
         return False
     return True
 
+
 # Adds Str User Path of Uploaded code to a separate file
 def Add_Executed_Path_To_File(UserPath, TimeStamp):
     global Uploaded_File, Uploaded_Code_List
@@ -106,11 +107,12 @@ def Add_Executed_Path_To_File(UserPath, TimeStamp):
     Uploaded_Code_List.append(UserPath + "_Uploaded-" + str(TimeStamp))
     return
 
+
 ### Uploading To GreenCode Functions
 #
 def Find_And_Upload():
     for UserPath in Executed_Code_List:
-        if not os.path.isfile(UserPath+"/"+Globe.Results_Json_Str):
+        if not os.path.isfile(UserPath + "/" + Globe.Results_Json_Str):
             GreenCode.Log_Time("ERROR-*-\tNo Results file found for Directory " + UserPath, time.time())
             continue
 
@@ -120,15 +122,15 @@ def Find_And_Upload():
         #     Add_Executed_Path_To_File(UserPath, round(time.time()))
         #     continue
         try:
-                GreenCode.Upload_To_GreenCode(jsonResultRile=UserPath + "/" + Globe.Results_Json_Str)
+            GreenCode.Upload_To_GreenCode(jsonResultFile=(UserPath + "/" + Globe.Results_Json_Str))
         except Exception as e:
-                GreenCode.Log_Time("FATAL-*-\tUpload Failed, continuing forward")
-                continue
-        Add_Executed_Path_To_File(UserPath, round(time.time())
+            GreenCode.Log_Time("FATAL-*-\tUpload Failed, continuing forward", dt.now(tz))
+            continue
+        Add_Executed_Path_To_File(UserPath, round(time.time()))
 
-#        if GreenCode.Upload_To_GreenCode(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
-            # Append Userpath if Upload successful
-		# Add_Executed_Path_To_File(UserPath, round(time.time()))
+        # if GreenCode.Upload_To_GreenCode(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
+        #     # Append Userpath if Upload successful
+        #     Add_Executed_Path_To_File(UserPath, round(time.time()))
 
     return
 
@@ -155,9 +157,9 @@ def Clean_Up():
 
     return
 
+
 ### Main Execution Build Section
 def main():
-
     # Starting Log Statement
     GreenCode.Log_Time("US##-\tUpload Started", dt.now(tz))
 
@@ -193,14 +195,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    #try:
+    # try:
     main()
-    #except Exception as e:
+    # except Exception as e:
     #    GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
     #    GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
     #    GreenCode.Log_Time("CONTINUING-^-\tError happened, continuing", dt.now(tz), Override=True)
-	#os.remove(Globe.Uploading_Code_Str)
-        #os.remove(Globe.Newly_Uploaded_Code_str)
-        #sys.exit(1)
+    # os.remove(Globe.Uploading_Code_Str)
+    # os.remove(Globe.Newly_Uploaded_Code_str)
+    # sys.exit(1)
 
     sys.exit(0)
