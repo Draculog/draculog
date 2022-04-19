@@ -119,10 +119,16 @@ def Find_And_Upload():
         #     resultsFile.close()
         #     Add_Executed_Path_To_File(UserPath, round(time.time()))
         #     continue
+        try:
+                GreenCode.Upload_To_GreenCode(jsonResultRile=UserPath + "/" + Globe.Results_Json_Str)
+        except Exception as e:
+                GreenCode.Log_Time("FATAL-*-\tUpload Failed, continuing forward")
+                continue
+        Add_Executed_Path_To_File(UserPath, round(time.time())
 
-        if GreenCode.Upload_To_GreenCode(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
+#        if GreenCode.Upload_To_GreenCode(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
             # Append Userpath if Upload successful
-            Add_Executed_Path_To_File(UserPath, round(time.time()))
+		# Add_Executed_Path_To_File(UserPath, round(time.time()))
 
     return
 
@@ -187,13 +193,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
-        GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
-        os.remove(Globe.Uploading_Code_Str)
-        os.remove(Globe.Newly_Uploaded_Code_str)
-        sys.exit(1)
+    #try:
+    main()
+    #except Exception as e:
+    #    GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
+    #    GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
+    #    GreenCode.Log_Time("CONTINUING-^-\tError happened, continuing", dt.now(tz), Override=True)
+	#os.remove(Globe.Uploading_Code_Str)
+        #os.remove(Globe.Newly_Uploaded_Code_str)
+        #sys.exit(1)
 
     sys.exit(0)
