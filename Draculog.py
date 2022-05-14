@@ -1,8 +1,10 @@
 #### DracuLog   > Global Value and Function Classes
-### Abstract    - Downloading/Uploading Hook for Green Code and DracuLog Integration & Global Variables
+### Abstract    - Downloading/Uploading Hook for Green Code and DracuLog Integration & Global Variables for Draculog
 ## Created by Daniel Jacoby alongside Dr. Joshua Gross, Aaron Helman, and Austin Folster
-#
+
 import datetime
+from email import header
+from urllib import request
 
 import pytz
 
@@ -39,6 +41,8 @@ class GlobalValues:
 # For the Shared Functions Below
 import json
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import os
 import sys
 import shutil
@@ -49,9 +53,11 @@ class SharedDraculogFunctions:
         # API Variables
         self.name = "GreenCode and Draculog Integration"
         self.greenCodeApiToken = ""
-        self.greenCodeApiBase = "https://greencodemk2.herokuapp.com/code/"
+        self.greenCodeApiBase = "https://greencodemk2.herokuapp.com/code/"  
         self.headers = {'Content-Type': 'application/json',
-                        'Authorization': 'Bearer {0}'.format(self.greenCodeApiToken)}
+                        'Authorization': 'Bearer {0}'.format(self.greenCodeApiToken),
+                        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+                        'Accept': 'text/plain'}
         self.downloadToken = "notCompiled"
         self.uploadToken = "uploadResults"
         self.LogFile = None
@@ -66,7 +72,9 @@ class SharedDraculogFunctions:
         apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.downloadToken)
         response = requests.get(apiCall, headers=self.headers)
         if response.status_code == 200:
-            return json.loads(response.content.decode('utf-8'))
+            jsonContent = response.content.decode('utf-8')
+            response.close()
+            return json.loads(jsonContent)
         else:
             thisTime = time.today()
             if GlobalValues.verbose:
@@ -75,31 +83,37 @@ class SharedDraculogFunctions:
             if GlobalValues.log:
                 self.Log_Time("ERROR-*-\tDownloading Code Failed", thisTime)
                 self.Log_Time("ERROR-^-\tResponse: " + str(response.raise_for_status()), thisTime)
+            response.close()
             return None
 
     # Calls Green code to upload a user's JSON result to Green Code's website
     def Upload_To_GreenCode(self, jsonResultFile):
         response = None
+        headers = {'Content-type': 'application/json', 
+                    'Accept': 'text/plain'}
         apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.uploadToken)
         jsonObj = json.loads(open(jsonResultFile, 'r+').read())
 
         try:
             response = requests.post(apiCall, json=jsonObj)
-            print(response.text)
+            #print(response.text)
         except requests.exceptions.HTTPError as e:
             thisTime = time.now()
             self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error Failed for " + jsonResultFile, thisTime)
             self.Log_Time("FATAL-^-\tError is " + str(e), thisTime)
+            response.close()
             return False
         if response.status_code == 200:
             thisTime = time.now()
             self.Log_Time("UPDATE-*-\tUploading Code Succeeded for " + jsonResultFile, thisTime)
+            response.close()
             return True
         else:
             thisTime = time.now()
             self.Log_Time("FATAL-*-\tUploading Code Failed for " + jsonResultFile, thisTime)
-            self.Log_Time("FATAL-^-\tResponse: ", thisTime)
-            self.Log_Time(str(response.raise_for_status()), thisTime)
+            self.Log_Time("FATAL-^-\tResponse: ", thisTime)  # Might not be doing what I want
+            self.Log_Time(str(response.raise_for_status()), thisTime)  # Might not be doing what I want
+            response.close()
             return False
 
     ### Logging Functions

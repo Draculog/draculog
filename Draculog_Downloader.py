@@ -128,6 +128,10 @@ def Setup_UnCompiledCode(PulledJSON):
 
         # Checks if the User already has a submission of this number, and if not makes one
         submissionPath = userpath + "/" + s
+
+        # Check if we've already executed/uploaded this user before
+        # if os.path.isdir(submissionPath +
+
         if os.path.isdir(submissionPath):
             GreenCode.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(tz))
             shutil.rmtree(submissionPath)
