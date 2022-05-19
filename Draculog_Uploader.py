@@ -124,7 +124,7 @@ def Find_And_Upload():
         try:
             GreenCode.Upload_To_GreenCode(jsonResultFile=(UserPath + "/" + Globe.Results_Json_Str))
         except Exception as e:
-            GreenCode.Log_Time("FATAL-*-\tUpload Failed, continuing forward", dt.now(tz))
+            GreenCode.Log_Time("FATAL-*-\tUpload Failed for " + UserPath + ", continuing forward", dt.now(tz))
             continue
         Add_Executed_Path_To_File(UserPath, round(time.time()))
 
