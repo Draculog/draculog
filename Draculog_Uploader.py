@@ -195,14 +195,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    # try:
-    main()
-    # except Exception as e:
-    #    GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
-    #    GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
-    #    GreenCode.Log_Time("CONTINUING-^-\tError happened, continuing", dt.now(tz), Override=True)
-    # os.remove(Globe.Uploading_Code_Str)
-    # os.remove(Globe.Newly_Uploaded_Code_str)
-    # sys.exit(1)
+    try:
+        main()
+    except Exception as e:
+        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
+        GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
+        GreenCode.Log_Time("CONTINUING-^-\tError happened, continuing", dt.now(tz), Override=True)
+        os.remove(Globe.Uploading_Code_Str)
+        os.remove(Globe.Newly_Uploaded_Code_str)
+        sys.exit(1)
 
     sys.exit(0)
