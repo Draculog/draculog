@@ -1,0 +1,124 @@
+{
+    "submissionId": 420, 
+    "compliedEnum": 2,
+    "resultsString": "All Tasks Completed Successfully",
+    "algorithms": [
+        {
+            "algorithmName": "Bubble Sort",
+            "sizeRuns": [
+                {
+                    "size": 50000,
+                    "time": 60,
+                    "energy": 120,
+                    "carbon": 1
+                },
+                {
+                    "size": 100000,
+                    "time": 120,
+                    "energy": 180,
+                    "carbon": 2 
+                },
+                {
+                    "size": 150000,
+                    "time": 240,
+                    "energy": 240,
+                    "carbon": 3 
+                },
+                {
+                    "size": 200000,
+                    "time": 480,
+                    "energy": 300,
+                    "carbon": 4 
+                }
+            ]
+        },
+        {
+            "algorithmName": "Insertion Sort",
+            "sizeRuns": [
+                {
+                    "size": 50000,
+                    "time": 45,
+                    "energy": 110,
+                    "carbon": 1
+                },
+                {
+                    "size": 100000,
+                    "time": 80,
+                    "energy": 180,
+                    "carbon": 2 
+                },
+                {
+                    "size": 150000,
+                    "time": 160,
+                    "energy": 240,
+                    "carbon": 3 
+                },
+                {
+                    "size": 200000,
+                    "time": 400,
+                    "energy": 300,
+                    "carbon": 4 
+                }
+            ]
+        },
+        {
+            "algorithmName": "Fast Insertion Sort",
+            "sizeRuns": [
+                {
+                    "size": 50000,
+                    "time": 40,
+                    "energy": 100,
+                    "carbon": 1
+                },
+                {
+                    "size": 100000,
+                    "time": 75,
+                    "energy": 180,
+                    "carbon": 2 
+                },
+                {
+                    "size": 150000,
+                    "time": 152,
+                    "energy": 240,
+                    "carbon": 3 
+                },
+                {
+                    "size": 200000,
+                    "time": 379,
+                    "energy": 300,
+                    "carbon": 4 
+                }
+            ]    
+        },    
+        {
+            "algorithmName": "Selection Sort",
+            "sizeRuns": [
+                {
+                    "size": 50000,
+                    "time": 18,
+                    "energy": 120,
+                    "carbon": 1
+                },
+                {
+                    "size": 100000,
+                    "time": 143,
+                    "energy": 180,
+                    "carbon": 2 
+                },
+                {
+                    "size": 150000,
+                    "time": 240,
+                    "energy": 240,
+                    "carbon": 3 
+                },
+                {
+                    "size": 200000,
+                    "time": 360,
+                    "energy": 300,
+                    "carbon": 4
+                }
+            ]
+        }
+    ]
+}
+

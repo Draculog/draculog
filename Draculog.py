@@ -18,6 +18,7 @@ class GlobalValues:
     verbose = True
     log = True
     timeoutSeconds = 1000
+    header_file_usage = True
 
     # Variables used to control what to log
     Measure_CPU_Temps = False
@@ -27,6 +28,9 @@ class GlobalValues:
     # Special Unifying Strings
     Executable_Str = "code"
     Results_Json_Str = "Results.json"
+    Header_File_Location = "Headers"
+    Main_Header_File_Str = "main.cpp"
+    Header_File_Str = "header.h"
 
     # String Version of File names (used as control variables)
     User_Code_Directory_Name = "Downloaded_Code"
@@ -51,15 +55,15 @@ from datetime import datetime as time
 class SharedDraculogFunctions:
     def __init__(self):
         # API Variables
-        self.name = "GreenCode and Draculog Integration"
-        self.greenCodeApiToken = ""
-        self.greenCodeApiBase = "https://greencodemk2.herokuapp.com/code/"  
-        self.headers = {'Content-Type': 'application/json',
-                        'Authorization': 'Bearer {0}'.format(self.greenCodeApiToken),
-                        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
-                        'Accept': 'text/plain'}
+        self.name = "FrankenWeb and Draculog Integration"
+        self.FrankenWebApiToken = ""
+        self.FrankenWebApiBase = "https://greencodemk2.herokuapp.com/code/"
         self.downloadToken = "notCompiled"
         self.uploadToken = "uploadResults"
+        self.headers = {'Content-Type': 'application/json',
+                        'Authorization': 'Bearer {0}'.format(self.FrankenWebApiToken),
+                        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+                        'Accept': 'text/plain'}
         self.LogFile = None
 
     def Call_Me(self):
@@ -68,8 +72,8 @@ class SharedDraculogFunctions:
 
     ### API Functions
     # Calls Green Code to download all un-compiled code from Green Code's Website
-    def Download_From_GreenCode(self):
-        apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.downloadToken)
+    def Download_From_FrankenWeb(self):
+        apiCall = '{0}{1}'.format(self.FrankenWebApiBase, self.downloadToken)
         response = requests.get(apiCall, headers=self.headers)
         if response.status_code == 200:
             jsonContent = response.content.decode('utf-8')
@@ -87,11 +91,11 @@ class SharedDraculogFunctions:
             return None
 
     # Calls Green code to upload a user's JSON result to Green Code's website
-    def Upload_To_GreenCode(self, jsonResultFile):
+    def Upload_To_FrankenWeb(self, jsonResultFile):
         response = None
         headers = {'Content-type': 'application/json', 
                     'Accept': 'text/plain'}
-        apiCall = '{0}{1}'.format(self.greenCodeApiBase, self.uploadToken)
+        apiCall = '{0}{1}'.format(self.FrankenWebApiBase, self.uploadToken)
         jsonObj = json.loads(open(jsonResultFile, 'r+').read())
 
         try:

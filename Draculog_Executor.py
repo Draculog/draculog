@@ -22,21 +22,25 @@ Users_Code/
           JSON_Result
           CPP_Code (Saved as userId_submissionId)
 
+TODO Transition to using Power-C like we were before, with a usable header file
 Results JSON Looks Like:
-JSON (Resultant Obj from execution) = {
-    id: int,
+JSON (Resultant Obj from execution for each submission) = {
     submissionId: int,
-    result:{
-        start time: start time (int, UNIX),
-        end time: end time (int, UNIX),
-        delta time: end time - start time (int, UNIX),
-        measurements: {
-            Sensor 1 name: [measurements],
-            ...
-            Sensor N name: [measurements]
-            }
-        other sensor measurements (str) (not correlated to time): data (varying, but in this case int)
-    }
+    compiledEnum: int,
+    resultsString: string,
+    algorithms: [
+        {
+            algorithmName: string,
+            sizeRuns: [
+                {
+                    size: int,
+                    time: float,
+                    energy: float,
+                    carbon: float
+                }, .... (k times for going from size n -> m)
+            ]
+        }, .... (j times for going from algorithms n -> m)
+    ]
 }
 """
 
@@ -60,18 +64,20 @@ from Draculog import SharedDraculogFunctions
 
 from Sensors.Sensor import GlobalSensorValues as SensorGlobe
 
-GreenCode = SharedDraculogFunctions()
+FrankenWeb = SharedDraculogFunctions()
 
 # TimeZone creation for logging
 tz = pytz.timezone(Globe.tzStr)
 
 # Sensors
 # TODO-Modularity To make Draculog more modular, I need to make this dynamic and not static
-from Sensors import Sensor_Time, Sensor_Temp, Sensor_Load, Sensor_PyRAPL
+from Sensors import Sensor_Time
+#, Sensor_PyRAPL
 
 Sensor_Index = 0
-Sensors_List = [Sensor_Time.Time(), Sensor_Load.Load(), Sensor_Temp.Temperature(),
-                Sensor_PyRAPL.PyRAPL(organizeMe=False)]
+Sensors_List = [Sensor_Time.Time()]
+#, Sensor_PyRAPL.PyRAPL(organizeMe=False)]
+
 Sensors_Threads = []
 
 # Control Variables
@@ -104,7 +110,7 @@ def Compile_List_Of_Users():
         DLCode.close()
     # If there is no downloaded code file, return none for error control
     else:
-        GreenCode.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
+        FrankenWeb.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
         return False
 
     return True
@@ -171,7 +177,7 @@ def Add_Executed_Path_To_File(UserPath, TimeStamp):
 
 def Build_Sensor_Threads():
     global Sensors_Threads, Sensor_Index
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tBuilding all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tBuilding all sensors", time.time())
     Sensors_Threads.clear()
     for sensor in Sensors_List:
         # This section is for sensors who don't need to be threaded
@@ -182,38 +188,38 @@ def Build_Sensor_Threads():
         t = sensor.Build_Logger(str(Sensor_Index), function=sensor.Log)
         Sensors_Threads.append(t)
     Sensor_Index += 1
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished building all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished building all sensors", time.time())
     return
 
 
 def Start_Sensor_Threads():
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     for t in Sensors_Threads:
         if t in Sensors_List:
             t.Start_Logging()
             continue
         t.start()
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
     return
 
 
 def Wait_For_Sensor_Threads():
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tWaiting for all sensors to finish", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tWaiting for all sensors to finish", time.time())
     for t in Sensors_Threads:
         if t in Sensors_List:
             t.End_Logging()
             continue
         t.join()
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
     return
 
 
 def Gather_Sensor_Data():
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     measurements = []
     for sensor in Sensors_List:
         measurements.append([sensor, sensor.Get_Data()])
-    GreenCode.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
+    FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
     return measurements
 
 
@@ -227,11 +233,11 @@ def Execute_User_Code(status, commands):
             output = subprocess.run(commands, timeout=timeoutSeconds, stdout=subprocess.DEVNULL,
                                     stderr=subprocess.STDOUT)
         except subprocess.TimeoutExpired:
-            GreenCode.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
+            FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
             status = False
 
         if output is None or output.returncode != 0:
-            GreenCode.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
+            FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
             status = False
 
     end_time = time.time()
@@ -256,7 +262,7 @@ def Measure_User_Code():
 
         # Find the MakeFile and execute it (Build Source Code), else return that the status is false/failed
         if not os.path.isfile(User_Path + "/Makefile"):
-            GreenCode.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
+            FrankenWeb.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
             continue
         else:
             # Run the makefile, if it fails save that status (errors in their code)
@@ -266,7 +272,7 @@ def Measure_User_Code():
 
         # Checks to see if we've already run their code
         if os.path.isfile(User_Path + "/Results.json"):
-            GreenCode.Log_Time("ERROR-*-\tUser's Submission @ " + User_Path + " already contains results, skipping",
+            FrankenWeb.Log_Time("ERROR-*-\tUser's Submission @ " + User_Path + " already contains results, skipping",
                                dt.now(tz), OnlyPrint=True)
             continue
         else:
@@ -342,7 +348,7 @@ def Clean_Up():
 def main():
 
     # Starting Log Statement
-    GreenCode.Log_Time("ES##-\tExecution Started", dt.now(tz))
+    FrankenWeb.Log_Time("ES##-\tExecution Started", dt.now(tz))
 
     # Checks to see if we are already downloading, executing, or uploading code
     global control_file
@@ -376,7 +382,7 @@ def main():
     os.remove(Globe.Executing_Code_Str)
 
     # Ending Log Statement
-    GreenCode.Log_Time("EF##-\tExecution Finished", dt.now(tz))
+    FrankenWeb.Log_Time("EF##-\tExecution Finished", dt.now(tz))
 
     return
 
@@ -386,8 +392,8 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
-        GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
         os.remove(Globe.Executing_Code_Str)
         os.remove(Globe.Newly_Executed_Code_str)
         sys.exit(1)

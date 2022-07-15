@@ -4,7 +4,7 @@
 
 """
 Notes:
-Downloaded JSON from GreenCode looks as such:
+Downloaded JSON from FrankenWeb looks as such:
 JSON (Pulled Obj) = {
   PulledData [0] = {
       submissionId: int,
@@ -58,7 +58,7 @@ import shutil
 from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
-GreenCode = SharedDraculogFunctions()
+FrankenWeb = SharedDraculogFunctions()
 
 # TimeZone creation for logging
 tz = pytz.timezone(Globe.tzStr)
@@ -93,7 +93,7 @@ def Compile_List_Of_Users():
         Executed_Code_List.pop()
     else:
         thisTime = dt.now(tz)
-        GreenCode.Log_Time("FATAL-*-\tNo Executed Code List Found", thisTime)
+        FrankenWeb.Log_Time("FATAL-*-\tNo Executed Code List Found", thisTime)
         return False
     return True
 
@@ -108,12 +108,12 @@ def Add_Executed_Path_To_File(UserPath, TimeStamp):
     return
 
 
-### Uploading To GreenCode Functions
+### Uploading To FrankenWeb Functions
 #
 def Find_And_Upload():
     for UserPath in Executed_Code_List:
         if not os.path.isfile(UserPath + "/" + Globe.Results_Json_Str):
-            GreenCode.Log_Time("ERROR-*-\tNo Results file found for Directory " + UserPath, time.time())
+            FrankenWeb.Log_Time("ERROR-*-\tNo Results file found for Directory " + UserPath, time.time())
             continue
 
         # if testing:
@@ -122,13 +122,13 @@ def Find_And_Upload():
         #     Add_Executed_Path_To_File(UserPath, round(time.time()))
         #     continue
         try:
-            GreenCode.Upload_To_GreenCode(jsonResultFile=(UserPath + "/" + Globe.Results_Json_Str))
+            FrankenWeb.Upload_To_FrankenWeb(jsonResultFile=(UserPath + "/" + Globe.Results_Json_Str))
         except Exception as e:
-            GreenCode.Log_Time("FATAL-*-\tUpload Failed for " + UserPath + ", continuing forward", dt.now(tz))
+            FrankenWeb.Log_Time("FATAL-*-\tUpload Failed for " + UserPath + ", continuing forward", dt.now(tz))
             continue
         Add_Executed_Path_To_File(UserPath, round(time.time()))
 
-        # if GreenCode.Upload_To_GreenCode(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
+        # if FrankenWeb.Upload_To_FrankenWeb(jsonResultFile=UserPath + "/" + Globe.Results_Json_Str):
         #     # Append Userpath if Upload successful
         #     Add_Executed_Path_To_File(UserPath, round(time.time()))
 
@@ -161,7 +161,7 @@ def Clean_Up():
 ### Main Execution Build Section
 def main():
     # Starting Log Statement
-    GreenCode.Log_Time("US##-\tUpload Started", dt.now(tz))
+    FrankenWeb.Log_Time("US##-\tUpload Started", dt.now(tz))
 
     # Checks to see if we are already downloading, executing, or uploading code
     global control_file
@@ -190,7 +190,7 @@ def main():
     os.remove(Globe.Uploading_Code_Str)
 
     # Ending Log Statement
-    GreenCode.Log_Time("UF##-\tUpload Finished", dt.now(tz))
+    FrankenWeb.Log_Time("UF##-\tUpload Finished", dt.now(tz))
 
 
 # Main Execution
@@ -198,9 +198,9 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
-        GreenCode.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
-        GreenCode.Log_Time("CONTINUING-^-\tError happened, continuing", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Uploader now", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-^-\tError:\n" + str(e), dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("CONTINUING-^-\tError happened, continuing", dt.now(tz), Override=True)
         os.remove(Globe.Uploading_Code_Str)
         os.remove(Globe.Newly_Uploaded_Code_str)
         sys.exit(1)

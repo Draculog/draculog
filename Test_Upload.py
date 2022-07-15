@@ -2,7 +2,7 @@ import os
 import sys
 
 from Draculog import SharedDraculogFunctions
-GreenCode = SharedDraculogFunctions()
+FrankenWeb = SharedDraculogFunctions()
 
 file = "Results.json"
 
@@ -19,7 +19,7 @@ else:
 # resp = req.get("https://127.0.0.1:3000/code/notCompiled")
 # print(resp)
 
-if GreenCode.Upload_To_GreenCode(file):
+if FrankenWeb.Upload_To_FrankenWeb(file):
     print("Upload did not fail")
 else:
     print("Upload Failed")

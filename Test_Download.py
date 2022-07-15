@@ -2,7 +2,7 @@ import os
 import sys
 
 from Draculog import SharedDraculogFunctions
-GreenCode = SharedDraculogFunctions()
+FrankenWeb = SharedDraculogFunctions()
 
 folder = "Testing"
 
@@ -12,4 +12,4 @@ else:
     print("I can't see the test folder")
     os.mkdir(folder)
 
-print(GreenCode.Download_From_GreenCode())
+print(FrankenWeb.Download_From_FrankenWeb())
