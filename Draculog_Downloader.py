@@ -4,7 +4,7 @@
 
 """
 Notes:
-Downloaded JSON from GreenCode looks as such:
+Downloaded JSON from FrankenWeb looks as such:
 JSON (Pulled Obj) = {
   PulledData [0] = {
       submissionId: int,
@@ -26,23 +26,23 @@ Users_Code/
           CPP_Code (Saved as userId_submissionId)
 """
 
-# String Used for if user's don't have code submitted to GreenCode
+# String Used for if user's don't have code submitted to FrankenWeb
 
-# For Linux System Time Operations
-from datetime import datetime as dt
-import pytz
-
-# For Linux System Operation
-import sys
 import os
 import shutil
+# For Linux System Operation
+import sys
+# For Linux System Time Operations
+from datetime import datetime as dt
+
+import pytz
 
 # For Controlling the System
 from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
-# API Connection to GreenCode
-GreenCode = SharedDraculogFunctions()
+# API Connection to FrankenWeb
+FrankenWeb = SharedDraculogFunctions()
 
 # TimeZone creation for logging
 tz = pytz.timezone(Globe.tzStr)
@@ -51,6 +51,7 @@ tz = pytz.timezone(Globe.tzStr)
 verbose = Globe.verbose
 log = Globe.log
 control_file = None
+header_file_usage = Globe.header_file_usage
 
 # List of Downloaded Code
 if not os.path.isfile(Globe.Newly_Downloaded_Code_Str):
@@ -60,6 +61,7 @@ else:
 
 # Directory Variables
 mainCodeDirectory = Globe.User_Code_Directory_Name
+headerFileLocation = Globe.Header_File_Location
 
 ### Code Set Up Functions
 # Creates an MakeFile for the User's Code
@@ -68,34 +70,55 @@ def Create_Makefile(path, codeFile):
     # TODO-MultiCompiler Add Dynamic Compiler Variable
     compiler = "g++"
     # TODO-MultiCompiler Add Dynamic Compiler Flags Variable
-    flags = "-std=c++11 -Wno-psabi -o"
+    flags = "-std=c++11 -Wno-psabi" if header_file_usage else "-std=c++11 -Wno-psabi -o"
+
+    # Makes a special makefile dependent on if we are using a main header file or not
+    if header_file_usage:
+        main_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(FILES) -o " + Globe.Executable_Str + "\n"
+        exec_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(FILES) -o " + Globe.Executable_Str + "\n"
+    else:
+        main_str = "\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n"
+        exec_str = "\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n"
+
+    # - catches error when executing makefile
     try:
         makefile = open(path + "/" + "Makefile", "w")
-        makefile.write("COM=" + compiler + "\n")
-        makefile.write("FLAGS=" + flags + "\n")
+        makefile.write("COM = " + compiler + "\n")
+        makefile.write("FLAGS = " + flags + "\n")
+        if header_file_usage:
+            makefile.write("MAIN_HEADER = " + Globe.Main_Header_File_Str + "\n")
+            makefile.write("HEADER = " + Globe.Header_File_Str + "\n")
         makefile.write("all: main\n")
-        makefile.write("main: " + codeFile + "\n")
-        makefile.write("\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n")
-        # - catches error when executing makefile, so like does it make a file?
+        if header_file_usage:
+            makefile.write("deps: $(HEADER)\n")
+        makefile.write(main_str)
+        makefile.write(exec_str)
         makefile.close()
     except Exception as myE:
-        GreenCode.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(tz), Override=True)
 
     return
 
+# Copies over Header Files to user directory
+def Copy_Header_Files(userPath):
+    files = [(headerFileLocation + "/" + Globe.Main_Header_File_Str), (headerFileLocation + "/" + Globe.Header_File_Str)]
+    for f in files:
+        shutil.copy(f, userPath)
+    return
 
-# Creates an Executable File from the User's Code
+
+# Creates a File containing the User's Code
 def Create_User_Code(path, codeFile, codeString):
     # Write the submitted code to the code file, and if it's None run a 60-second baseline measure
     if codeString is not None:
         file = open(path + "/" + codeFile, "w")
         file.write(codeString)
         file.close()
-    # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
     else:
-        GreenCode.Log_Time("WARNING-*-\tSubmission Code Doesn't Exist, Skipping and Deleting Directory", dt.now(tz))
-        
+        FrankenWeb.Log_Time("WARNING-*-\tSubmission Code Doesn't Exist, Skipping and Deleting Directory", dt.now(tz))
+
     return codeString is not None
+
 
 # Adds Str User Path of Downloaded code to a separate file
 def Add_Downloaded_Path_To_File(UserPath):
@@ -105,12 +128,13 @@ def Add_Downloaded_Path_To_File(UserPath):
     Downloaded_File.write(UserPath + "\n")
     return
 
+
 # TODO Create a test where we pass it a list of dictionaries, passes if it makes them
 # Goes through all pulled users (from un-compiled code) and creates directories with a make file in them
-def Setup_UnCompiledCode(PulledJSON):
+def Setup_UnCompiled_Headless_Code(PulledJSON):
     # Make Main Directory
     if not os.path.isdir(mainCodeDirectory):
-        GreenCode.Log_Time("UPDATE-*-\tNo Main directory Found, Making new one", dt.now(tz), OnlyPrint=verbose)
+        FrankenWeb.Log_Time("UPDATE-*-\tNo Main directory Found, Making new one", dt.now(tz), OnlyPrint=verbose)
         os.mkdir(mainCodeDirectory)
 
     for submission in PulledJSON:
@@ -118,24 +142,26 @@ def Setup_UnCompiledCode(PulledJSON):
         u = str(submission["userId"])  # User ID
         s = str(submission["submissionId"])  # Submission ID
         m = str(submission["mimetype"])  # Mimetype (cpp/c/py etc)
-        codeFile = u + "_" + s + "." + m  # Code File Name
+
+        # User file creation, checks if we need to make a headless or headed file name
+        codeFile = (s + "_submitted_sorts." + m) if header_file_usage else (u + "_" + s + "." + m)
 
         # Checks if the User has a directory and if not, makes one
         userpath = mainCodeDirectory + "/" + u
         if not os.path.isdir(userpath):
-            GreenCode.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now(tz))
+            FrankenWeb.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now(tz))
             os.mkdir(userpath)
 
         # Checks if the User already has a submission of this number, and if not makes one
         submissionPath = userpath + "/" + s
 
-        # Check if we've already executed/uploaded this user before
+        ## TODO Check if we've already executed/uploaded this user before
         # if os.path.isdir(submissionPath +
 
         if os.path.isdir(submissionPath):
-            GreenCode.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(tz))
+            FrankenWeb.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(tz))
             shutil.rmtree(submissionPath)
-        GreenCode.Log_Time("UPDATE-*-\tMaking a new subdirectory for user "+u+"'s submission "+s, dt.now(tz))
+        FrankenWeb.Log_Time("UPDATE-*-\tMaking a new subdirectory for user " + u + "'s submission " + s, dt.now(tz))
 
         os.mkdir(submissionPath)
 
@@ -143,57 +169,61 @@ def Setup_UnCompiledCode(PulledJSON):
         User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["codeString"])
         if User_Code_Exists:
             Create_Makefile(submissionPath, codeFile)
+            if header_file_usage:
+                Copy_Header_Files(submissionPath)
             Add_Downloaded_Path_To_File(submissionPath)
         else:
             shutil.rmtree(submissionPath)
 
     return
 
+
 ### Main Execution Build Section
 def main():
-
     # Starting Log Statement
-    GreenCode.Log_Time("DS##-\tDownload Starting", dt.now(tz))
+    FrankenWeb.Log_Time("DS##-\tDownload Starting", dt.now(tz))
 
     # Checks to see if we are already downloading, executing, or uploading code
     global control_file
     if os.path.isfile(Globe.Executing_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
         errorStr = "Executing" if os.path.isfile(Globe.Executing_Code_Str) else "Uploading"
-        GreenCode.Log_Time("WAIT-*-\tDraculog is currently " + errorStr + " code. . . . .", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("WAIT-*-\tDraculog is currently " + errorStr + " code. . . . .", dt.now(tz), Override=True)
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(2)
     if os.path.isfile(Globe.Downloading_Code_Str):
-        GreenCode.Log_Time("WAIT-*-\tDraculog is currently still Downloading code. . . . .", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("WAIT-*-\tDraculog is currently still Downloading code. . . . .", dt.now(tz), Override=True)
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(2)
 
     # Make a control Text File
     control_file = open(Globe.Downloading_Code_Str, "w")
 
-    # Download all Un-Compiled (ie Un-Tested) code from GreenCode's Website
+    # Download all Un-Compiled (ie Un-Tested) code from FrankenWeb's Website
     # End Result is a File called "New_Downloaded_Code.txt" that contains all newly downloaded Submissions Paths
-    UnCompiledCode = GreenCode.Download_From_GreenCode()
+    UnCompiledCode = FrankenWeb.Download_From_FrankenWeb()
     if UnCompiledCode is None:
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(1)
-    Setup_UnCompiledCode(UnCompiledCode)
+
+    Setup_UnCompiled_Headless_Code(UnCompiledCode)
 
     # Delete the control Text File
     control_file.close()
     os.remove(Globe.Downloading_Code_Str)
 
     # Ending Log Statement
-    GreenCode.Log_Time("DF##-\tDownload Finished", dt.now(tz))
+    FrankenWeb.Log_Time("DF##-\tDownload Finished", dt.now(tz))
 
     return
+
 
 # Main Execution
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        GreenCode.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
-        GreenCode.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
         os.remove(Globe.Downloading_Code_Str)
         os.remove(Globe.Newly_Downloaded_Code_Str)
         sys.exit(1)
