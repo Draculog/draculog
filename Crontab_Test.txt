@@ -1,0 +1,12 @@
+Crontab ran @ 2022-04-14 08:15:01.736358
+CWD: /home/daniel/draculog
+Crontab ran @ 2022-04-14 08:30:01.785815
+CWD: /home/daniel/draculog
+Crontab ran @ 2022-04-14 08:45:01.831322
+CWD: /home/daniel/draculog
+Crontab ran @ 2022-04-14 09:00:02.019375
+CWD: /home/daniel/draculog
+Crontab ran @ 2022-04-14 09:15:01.031562
+CWD: /home/daniel/draculog
+Crontab ran @ 2022-04-19 23:30:02.032123
+CWD: /home/daniel/draculog

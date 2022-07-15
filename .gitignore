@@ -4,9 +4,16 @@ Local_Draculog/power-c
 Local_Draculog/sorts
 /Source/sorts
 Local_Draculog/Source/sorts
+/Downloaded_Code
 .DracuLog.py.swp
 DracuLog.py.save
 # Default ignored files
 /shelf/
 /workspace.xml
 .idea/
+Sensors/__pycache__/
+__pycache__/
+Draculog_Log.txt
+Newly_Executed_Code.txt
+Newly_Downloaded_Code.txt
+
