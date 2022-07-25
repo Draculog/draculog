@@ -15,6 +15,7 @@ class GlobalValues:
     sensor_count = 2
 
     # Variables used for special execution
+    testing = True
     verbose = True
     log = True
     timeoutSeconds = 1000
@@ -24,6 +25,29 @@ class GlobalValues:
     Measure_CPU_Temps = False
     Measure_Load_Avgs = False
     Measure_CPU_Energy = False
+
+    # Map of Sensors
+    Sensor_List = {
+        "Time": None,
+        "Load": None,
+        "Temp": None,
+        "PyRapl": None
+    }
+
+    # Variables used for headless control
+    minSize = 5000
+    maxSize = 20000
+    step = 5000
+    algorithms = ["b", "i", "f", "s"]
+    algorithmMap = {
+        "b": "Bubble Sort",
+        "i": "Insertion Sort",
+        "f": "Fast Insertion Sort",
+        "s": "Selection Sort",
+        "h": "Heap Sort",
+        "m": "Merge Sort",
+        "q": "Quick Sort"
+    }
 
     # Special Unifying Strings
     Executable_Str = "code"
@@ -93,7 +117,7 @@ class SharedDraculogFunctions:
     # Calls Green code to upload a user's JSON result to Green Code's website
     def Upload_To_FrankenWeb(self, jsonResultFile):
         response = None
-        headers = {'Content-type': 'application/json', 
+        headers = {'Content-type': 'application/json',
                     'Accept': 'text/plain'}
         apiCall = '{0}{1}'.format(self.FrankenWebApiBase, self.uploadToken)
         jsonObj = json.loads(open(jsonResultFile, 'r+').read())
@@ -139,12 +163,22 @@ class SharedDraculogFunctions:
             self.LogFile = None
         return
 
+    # Creates Dummy JSON file from given data
+    @staticmethod
+    def Create_Dummy_Data():
+        f = open('Dummy_Data/Dummy_Data_Download.json')
+        data = json.load(f)
+        return data
+
+
 ### Functions for Basic Maintenance and Testing
+# Removes Old Log File
 def Remove_Log_File():
     os.remove("Draculog_Log.txt")
     LogFile = open(GlobalValues.Log_File_Str, "w+")
     LogFile.write("==========\tSTART OF DAY " + str(datetime.datetime.now(pytz.timezone(GlobalValues.tzStr))) + "\t==========\n")
     return
+
 
 
 if __name__ == "__main__":

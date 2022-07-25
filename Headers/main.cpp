@@ -43,25 +43,25 @@ int main(int argc, char *argv[]) {
 
     switch (sortType) {
        case 'b':
-          bubble_sort(a, size);
+          bubble_sort(a, size, false);
           break;
        case 'i':
-          insertion_sort(a, size);
+          insertion_sort(a, size, false);
           break;
        case 'f':
-          fast_insertion_sort(a, size);
+          fast_insertion_sort(a, size, false);
           break;
        case 's':
-          selection_sort(a, size);
+          selection_sort(a, size, false);
           break;
        case 'h':
-          heap_sort(a, size);
+          heap_sort(a, size, false);
           break;
        case 'm':
-          merge_sort(a, size);
+          merge_sort(a, size, false);
           break;
        case 'q':
-          quick_sort(a, size);
+          quick_sort(a, size, false);
           break;
        default:
           break;

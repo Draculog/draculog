@@ -48,6 +48,7 @@ FrankenWeb = SharedDraculogFunctions()
 tz = pytz.timezone(Globe.tzStr)
 
 # Control Variables
+testing = Globe.testing
 verbose = Globe.verbose
 log = Globe.log
 control_file = None
@@ -63,6 +64,8 @@ else:
 mainCodeDirectory = Globe.User_Code_Directory_Name
 headerFileLocation = Globe.Header_File_Location
 
+### Testing Functions
+
 ### Code Set Up Functions
 # Creates an MakeFile for the User's Code
 def Create_Makefile(path, codeFile):
@@ -74,11 +77,11 @@ def Create_Makefile(path, codeFile):
 
     # Makes a special makefile dependent on if we are using a main header file or not
     if header_file_usage:
-        main_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(FILES) -o " + Globe.Executable_Str + "\n"
-        exec_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(FILES) -o " + Globe.Executable_Str + "\n"
+        exec_str = "\nmain: deps $(MAIN_HEADER)\n"
+        main_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(HEADER) $(STUDENT_CODE) -o " + Globe.Executable_Str + "\n"
     else:
+        exec_str = "\nmain:\n"
         main_str = "\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n"
-        exec_str = "\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n"
 
     # - catches error when executing makefile
     try:
@@ -88,16 +91,18 @@ def Create_Makefile(path, codeFile):
         if header_file_usage:
             makefile.write("MAIN_HEADER = " + Globe.Main_Header_File_Str + "\n")
             makefile.write("HEADER = " + Globe.Header_File_Str + "\n")
-        makefile.write("all: main\n")
+            makefile.write("STUDENT_CODE = " + codeFile + "\n")
+        makefile.write("\nall: main\n")
         if header_file_usage:
-            makefile.write("deps: $(HEADER)\n")
-        makefile.write(main_str)
+            makefile.write("\ndeps: $(HEADER)\n")
         makefile.write(exec_str)
+        makefile.write(main_str)
         makefile.close()
     except Exception as myE:
         FrankenWeb.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(tz), Override=True)
 
     return
+
 
 # Copies over Header Files to user directory
 def Copy_Header_Files(userPath):
@@ -131,7 +136,7 @@ def Add_Downloaded_Path_To_File(UserPath):
 
 # TODO Create a test where we pass it a list of dictionaries, passes if it makes them
 # Goes through all pulled users (from un-compiled code) and creates directories with a make file in them
-def Setup_UnCompiled_Headless_Code(PulledJSON):
+def Setup_UnCompiled_Code(PulledJSON):
     # Make Main Directory
     if not os.path.isdir(mainCodeDirectory):
         FrankenWeb.Log_Time("UPDATE-*-\tNo Main directory Found, Making new one", dt.now(tz), OnlyPrint=verbose)
@@ -200,12 +205,12 @@ def main():
 
     # Download all Un-Compiled (ie Un-Tested) code from FrankenWeb's Website
     # End Result is a File called "New_Downloaded_Code.txt" that contains all newly downloaded Submissions Paths
-    UnCompiledCode = FrankenWeb.Download_From_FrankenWeb()
+    UnCompiledCode = SharedDraculogFunctions.Create_Dummy_Data() if testing else FrankenWeb.Download_From_FrankenWeb()
     if UnCompiledCode is None:
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(1)
 
-    Setup_UnCompiled_Headless_Code(UnCompiledCode)
+    Setup_UnCompiled_Code(UnCompiledCode)
 
     # Delete the control Text File
     control_file.close()
@@ -219,13 +224,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
-        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
-        os.remove(Globe.Downloading_Code_Str)
-        os.remove(Globe.Newly_Downloaded_Code_Str)
-        sys.exit(1)
+    main()
+    # try:
+    #     main()
+    # except Exception as e:
+    #     FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
+    #     FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+    #     os.remove(Globe.Downloading_Code_Str)
+    #     os.remove(Globe.Newly_Downloaded_Code_Str)
+    #     sys.exit(1)
 
     sys.exit(0)
