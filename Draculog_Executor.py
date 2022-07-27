@@ -71,7 +71,7 @@ tz = pytz.timezone(Globe.tzStr)
 
 # Sensors
 # TODO-Modularity To make Draculog more modular, I need to make this dynamic and not static
-from Sensors import Sensor_Dummy
+from Sensors import Sensor_Dummy, Sensor_PyRAPL
 
 Sensor_Index = 0
 # Sensor_List = Globe.Sensor_List
@@ -80,8 +80,8 @@ Sensors_List = {
     # "Time": Sensor_Time.Time(),
     # "Load": Sensor_Load.Load(),
     # "Temp": Sensor_Temp.Temperature(),
-    # "Pyrapl": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
-    "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
+    "Pyrapl": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
+    # "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
     }
 
 Sensors_Threads = []
@@ -206,7 +206,8 @@ def Compile_Headed_Data(result_json, submission_id, sensor_data, start_time, end
         "resultsString": "",
         "algorithms": output
     }
-
+    if testing:
+        print(result_obj)
     return result_obj
 
 
@@ -370,14 +371,16 @@ def Measure_Headed_User_Code():
 
         # For Each Submission, Loop for each algorithm in algorithms
         for algo in algorithms:
-            print("Running " + User_Path + "'s Code's with algorithm " + algo)
+	    if testing:
+            	print("Running " + User_Path + "'s Code's with algorithm " + algo)
             algo_data = {
                 "algorithmName": Globe.algorithmMap[algo],
                 "sizeRun": []
             }
             # For Each Submission of this algorithm, loop from n to m size
             for size in range(minSize, (maxSize + step), step):
-                print("Running " + algo + " at size " + str(size))
+                if testing:
+			print("Running " + algo + " at size " + str(size))
                 Sensors_Threads.clear()
 
                 # Initialize Sensor Control Variables
@@ -424,8 +427,8 @@ def Measure_Headed_User_Code():
                 sizeRun_data = {
                     "size": size,
                     "deltaTime": endTime - startTime,
-                    "energy": Sensors_List["Dummy"].Get_Data(),
-                    "carbon": Get_Carbon(Sensors_List["Dummy"].Get_Data())
+                    "energy": Sensors_List["Pyrapl"].Get_Data(),
+                    "carbon": Get_Carbon(Sensors_List["Pyrapl"].Get_Data())
                 }
                 print(sizeRun_data)
                 time.sleep(2)
@@ -596,14 +599,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    # main()
-    try:
-        main()
-    except Exception as e:
-        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
-        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
-        os.remove(Globe.Executing_Code_Str)
-        os.remove(Globe.Newly_Executed_Code_str)
-        sys.exit(1)
+    main()
+    #try:
+    #    main()
+    #except Exception as e:
+    #    FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
+    #    FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+    #    os.remove(Globe.Executing_Code_Str)
+    #    os.remove(Globe.Newly_Executed_Code_str)
+    #    sys.exit(1)
 
     sys.exit(0)
