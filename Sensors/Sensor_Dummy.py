@@ -21,14 +21,14 @@ def Dummy_Switch(data_to_dumb_down):
     return final_data
 
 class Dummy:
-    def __init__(self, name="Dummy", interval=Globe.interval, organizeMe=False, threadMe=False, data_to_dumb_down="PyRAPL"):
+    def __init__(self, name="Dummy", interval=-1, organizeMe=False, threadMe=False, data_to_dumb_down="PyRAPL"):
         super().__init__()
         self.data_to_dumb_down = data_to_dumb_down
         self.threadMe = threadMe
         self.thread = None
         self.interval = interval
         self.name = "Sensor-" + name
-        self.data = None
+        self.data = 0.0
         self.organizeMe = organizeMe
 
         self.final_data = Dummy_Switch(data_to_dumb_down)
@@ -57,9 +57,6 @@ class Dummy:
         return
 
     def Get_Data(self):
-        return self.data
-
-    def Get_Carbon(self):
         return self.data
 
     def Print_Data(self):

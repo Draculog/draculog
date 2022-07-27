@@ -115,7 +115,7 @@ else:
 ### Carbon Calculations
 # Formula for Carbon used from electricity is 884.2 lbs of CO2 / 1 MegaWatt Hour
 # As per this EPA.gov article: https://www.epa.gov/energy/greenhouse-gases-equivalencies-calculator-calculations-and-references
-def Get_Carbon(timeRun, energyUsed):
+def Get_Carbon(energyUsed):
     carbonFactor = 884.2  # CO2 in lbs used per 1 MegaWatt Hour
     milliGramsFactor = 453.592  # 1 lbs
     wattFactor = 1000000  # 1 MegaWatt is 1mil Watts, also 1 Joule = 1mil MicroJoules
@@ -199,6 +199,7 @@ JSON (Resultant Obj from execution for each submission) = {
 def Compile_Headed_Data(result_json, submission_id, sensor_data, start_time, end_time, size, algo, status, output):
     # Compile Results String (String)
     # Compile Enum (Int)
+
     result_obj = {
         "submission_id": submission_id,
         "compiledEnum": 1,
@@ -241,7 +242,7 @@ def Add_Executed_Path_To_File(UserPath, TimeStamp):
     Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
     return
 
-
+## TODO only used for non-headed file execution
 def Build_Sensor_Threads():
     global Sensors_Threads, Sensor_Index
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tBuilding all sensors", time.time())
@@ -259,6 +260,7 @@ def Build_Sensor_Threads():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished building all sensors", time.time())
     return
 
+## TODO only used for non-headed file execution
 ## TODO Fix sensor list bug, since can't check if a obj is in a dict like this
 def Start_Sensor_Threads():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
@@ -270,18 +272,19 @@ def Start_Sensor_Threads():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
     return
 
+## TODO only used for non-headed file execution
 ## TODO Fix sensor list bug, since can't check if a obj is in a dict like this
 def Wait_For_Sensor_Threads():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tWaiting for all sensors to finish", time.time())
     for t in Sensors_Threads:
-        # if t in Sensors_List:
-        #     t.End_Logging()
-        #     continue
+        if t in Sensors_List:
+            t.End_Logging()
+            continue
         t.join()
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
     return
 
-
+## TODO only used for non-headed file execution
 def Gather_Sensor_Data():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tGathering all sensor data", time.time())
     measurements = []
@@ -318,9 +321,10 @@ def Measure_Headed_User_Code():
 
     # Loop for Each Submission
     for User_Path in Downloaded_Code_List:
+        print("Running " + User_Path + "'s Code")
         # Initialize Variables for this Submission
         status = 0
-        result_json = []
+        algorithms_data = []
         # Check for any updates to the Newly Downloaded Code File, if yes then update the list
         if Check_For_Updates():
             Compile_List_Of_Users()
@@ -351,13 +355,11 @@ def Measure_Headed_User_Code():
             Data Obj = {
                 algorithmName: "",
                 sizeRun: [
-                    {
+                    { # sizeRun_data
                         size: x,
                         delta_time: x,
                         energy: x,
                         carbon: x,
-                        enum: x,
-                        results: ""
                     },
                     {
                         ...
@@ -368,12 +370,14 @@ def Measure_Headed_User_Code():
 
         # For Each Submission, Loop for each algorithm in algorithms
         for algo in algorithms:
+            print("Running " + User_Path + "'s Code's with algorithm " + algo)
             algo_data = {
                 "algorithmName": Globe.algorithmMap[algo],
                 "sizeRun": []
             }
             # For Each Submission of this algorithm, loop from n to m size
             for size in range(minSize, (maxSize + step), step):
+                print("Running " + algo + " at size " + str(size))
                 Sensors_Threads.clear()
 
                 # Initialize Sensor Control Variables
@@ -389,45 +393,53 @@ def Measure_Headed_User_Code():
 
                 # Build sensor threads
                 # Build_Sensor_Threads()
-                Sensors_List["Dummy"].Build_Logger()
+                for SensorStr in Sensors_List:
+                    Sensors_List[SensorStr].Build_Logger()
 
                 # TODO EXIT CODES:
                 ## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted/Seg Fault Error; 4 -> Timeout Error;
 
                 # Allow sensors to run
-                # SensorGlobe.continueLogging = True
+                SensorGlobe.continueLogging = True
 
                 # Start Sensor Threads
                 # Start_Sensor_Threads()
-                ## Since we're only measuring Energy, just call PyRAPL
-                Sensors_List["Dummy"].Start_Logging()
+                ## Since we're only measuring Energy, just call Start_Logging
+                for SensorStr in Sensors_List:
+                    Sensors_List[SensorStr].Start_Logging()
 
                 # Run Downloaded Code
                 startTime, endTime, status, output = Execute_User_Code(status, commands)
 
+                # Finishes Execution of All sensors (PyRAPL)
                 # Wait for all sensors to finish
                 # Wait_For_Sensor_Threads()
+                for SensorStr in Sensors_List:
+                    Sensors_List[SensorStr].End_Logging()
 
                 # # Gather all sensor data
                 # measurements = Gather_Sensor_Data() # Gets a list of sensors and data points
 
-                # # Gather all needed Data (Energy and Delta Time)
-                # sizeRun_data = {
-                #     "size": size,
-                #     "deltaTime": endTime - startTime,
-                #     "energy": None,
-                #     "carbon": 0
-                # }
+                # Gather all needed Data (Energy and Delta Time)
+                sizeRun_data = {
+                    "size": size,
+                    "deltaTime": endTime - startTime,
+                    "energy": Sensors_List["Dummy"].Get_Data(),
+                    "carbon": Get_Carbon(Sensors_List["Dummy"].Get_Data())
+                }
+                print(sizeRun_data)
+                time.sleep(2)
                 # combined_measurements = Combine_Data(measurements) # Returns a dictionary of those data points organized
 
-                algo_data["sizeRun"].append(None)
+                algo_data["sizeRun"].append(sizeRun_data)
+            algorithms_data.append(algo_data)
 
         # # Compile it all together into one singular JSON #TODO fix this function
         # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
         #                     endTime, size, algo, status, output)
 
         # Save it as a file in user path
-        json.dump(result_json, Results_File)
+        json.dump(algorithms_data, Results_File)
         Results_File.close()
 
         # Save New User Path
@@ -584,14 +596,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    main()
-    # try:
-    #     main()
-    # except Exception as e:
-    #     FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
-    #     FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
-    #     os.remove(Globe.Executing_Code_Str)
-    #     os.remove(Globe.Newly_Executed_Code_str)
-    #     sys.exit(1)
+    # main()
+    try:
+        main()
+    except Exception as e:
+        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+        os.remove(Globe.Executing_Code_Str)
+        os.remove(Globe.Newly_Executed_Code_str)
+        sys.exit(1)
 
     sys.exit(0)

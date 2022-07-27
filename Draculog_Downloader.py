@@ -115,6 +115,10 @@ def Copy_Header_Files(userPath):
 # Creates a File containing the User's Code
 def Create_User_Code(path, codeFile, codeString):
     # Write the submitted code to the code file, and if it's None run a 60-second baseline measure
+    if Globe.testing:
+        shutil.copyfile("Headers/0_submitted_code.cpp", path+"/"+codeFile)
+        return codeString is not None
+
     if codeString is not None:
         file = open(path + "/" + codeFile, "w")
         file.write(codeString)
