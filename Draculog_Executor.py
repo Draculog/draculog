@@ -322,7 +322,8 @@ def Measure_Headed_User_Code():
 
     # Loop for Each Submission
     for User_Path in Downloaded_Code_List:
-        print("Running " + User_Path + "'s Code")
+        if testing:
+            print("Running " + User_Path + "'s Code")
         # Initialize Variables for this Submission
         status = 0
         algorithms_data = []
@@ -371,8 +372,8 @@ def Measure_Headed_User_Code():
 
         # For Each Submission, Loop for each algorithm in algorithms
         for algo in algorithms:
-	    if testing:
-            	print("Running " + User_Path + "'s Code's with algorithm " + algo)
+            if testing:
+                print("Running " + User_Path + "'s Code's with algorithm " + algo)
             algo_data = {
                 "algorithmName": Globe.algorithmMap[algo],
                 "sizeRun": []
@@ -380,7 +381,7 @@ def Measure_Headed_User_Code():
             # For Each Submission of this algorithm, loop from n to m size
             for size in range(minSize, (maxSize + step), step):
                 if testing:
-			print("Running " + algo + " at size " + str(size))
+                    print("Running " + algo + " at size " + str(size))
                 Sensors_Threads.clear()
 
                 # Initialize Sensor Control Variables
