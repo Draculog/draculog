@@ -80,9 +80,9 @@ Sensors_List = {
     # "Time": Sensor_Time.Time(),
     # "Load": Sensor_Load.Load(),
     # "Temp": Sensor_Temp.Temperature(),
-    "Pyrapl": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
+    "PyRAPL": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
     # "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
-    }
+}
 
 Sensors_Threads = []
 
@@ -196,6 +196,7 @@ JSON (Resultant Obj from execution for each submission) = {
 }
 """
 
+
 def Compile_Headed_Data(result_json, submission_id, sensor_data, start_time, end_time, size, algo, status, output):
     # Compile Results String (String)
     # Compile Enum (Int)
@@ -243,6 +244,7 @@ def Add_Executed_Path_To_File(UserPath, TimeStamp):
     Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
     return
 
+
 ## TODO only used for non-headed file execution
 def Build_Sensor_Threads():
     global Sensors_Threads, Sensor_Index
@@ -261,6 +263,7 @@ def Build_Sensor_Threads():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished building all sensors", time.time())
     return
 
+
 ## TODO only used for non-headed file execution
 ## TODO Fix sensor list bug, since can't check if a obj is in a dict like this
 def Start_Sensor_Threads():
@@ -273,6 +276,7 @@ def Start_Sensor_Threads():
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
     return
 
+
 ## TODO only used for non-headed file execution
 ## TODO Fix sensor list bug, since can't check if a obj is in a dict like this
 def Wait_For_Sensor_Threads():
@@ -284,6 +288,7 @@ def Wait_For_Sensor_Threads():
         t.join()
     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
     return
+
 
 ## TODO only used for non-headed file execution
 def Gather_Sensor_Data():
@@ -299,7 +304,7 @@ def Gather_Sensor_Data():
 def Execute_User_Code(status, commands):
     output = None
     start_time = time.time()
-    if status:
+    if status == 0 or status:
         # TODO Spin up other thread to wait X time for seg faults
         # TODO-MultiCompiler This is where I would need to know a the needed compiler for their code
         try:
@@ -369,7 +374,6 @@ def Measure_Headed_User_Code():
                 ]
             }
         '''
-
         # For Each Submission, Loop for each algorithm in algorithms
         for algo in algorithms:
             if testing:
@@ -414,6 +418,8 @@ def Measure_Headed_User_Code():
 
                 # Run Downloaded Code
                 startTime, endTime, status, output = Execute_User_Code(status, commands)
+                if testing:
+                    print(output)
 
                 # Finishes Execution of All sensors (PyRAPL)
                 # Wait for all sensors to finish
@@ -428,11 +434,11 @@ def Measure_Headed_User_Code():
                 sizeRun_data = {
                     "size": size,
                     "deltaTime": endTime - startTime,
-                    "energy": Sensors_List["Pyrapl"].Get_Data(),
-                    "carbon": Get_Carbon(Sensors_List["Pyrapl"].Get_Data())
+                    "energy": Sensors_List["PyRAPL"].Get_Data(),
+                    "carbon": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
                 }
-                print(sizeRun_data)
-                time.sleep(2)
+                if testing:
+                    print(sizeRun_data)
                 # combined_measurements = Combine_Data(measurements) # Returns a dictionary of those data points organized
 
                 algo_data["sizeRun"].append(sizeRun_data)
@@ -601,9 +607,9 @@ def main():
 # Main Execution
 if __name__ == "__main__":
     main()
-    #try:
+    # try:
     #    main()
-    #except Exception as e:
+    # except Exception as e:
     #    FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Executor now", dt.now(tz), Override=True)
     #    FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
     #    os.remove(Globe.Executing_Code_Str)

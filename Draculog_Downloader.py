@@ -48,7 +48,7 @@ FrankenWeb = SharedDraculogFunctions()
 tz = pytz.timezone(Globe.tzStr)
 
 # Control Variables
-testing = Globe.testing
+dummy = Globe.dummy
 verbose = Globe.verbose
 log = Globe.log
 control_file = None
@@ -115,7 +115,7 @@ def Copy_Header_Files(userPath):
 # Creates a File containing the User's Code
 def Create_User_Code(path, codeFile, codeString):
     # Write the submitted code to the code file, and if it's None run a 60-second baseline measure
-    if Globe.testing:
+    if Globe.dummy:
         shutil.copyfile("Headers/0_submitted_code.cpp", path+"/"+codeFile)
         return codeString is not None
 
@@ -209,7 +209,7 @@ def main():
 
     # Download all Un-Compiled (ie Un-Tested) code from FrankenWeb's Website
     # End Result is a File called "New_Downloaded_Code.txt" that contains all newly downloaded Submissions Paths
-    UnCompiledCode = SharedDraculogFunctions.Create_Dummy_Data() if testing else FrankenWeb.Download_From_FrankenWeb()
+    UnCompiledCode = SharedDraculogFunctions.Create_Dummy_Data() if dummy else FrankenWeb.Download_From_FrankenWeb()
     if UnCompiledCode is None:
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(1)

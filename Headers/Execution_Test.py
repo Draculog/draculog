@@ -6,20 +6,25 @@ import os
 import subprocess
 import sys
 
-minSize = 50000
-maxSize = 200000
-step = 50000
+minSize = 5000
+maxSize = 20000
+step = 5000
 algorithms = ["b", "i", "f", "s"]
-compiler = "python3"
+compiler = "./code"
+
+print("Starting Execution Testing")
 
 # For Each Submission, Loop for Each size variation
 for size in range(minSize, (maxSize + step), step):
+    print("Size is: " + str(size))
     # For Each Submission of n size variation loop for each algorithm
     for algo in algorithms:
-        command = [compiler, "helloworld.py", str(size), algo]
+        print("Algo is: " + algo)
+        command = [compiler, str(size), algo]
+        print("Command is " + str(command))
         output = None
         try:
-            output = subprocess.run(command, timeout=10, capture_output=True, text=True)
+            output = subprocess.run(command, timeout=1000, capture_output=True, text=True)
         #      stdout=subprocess.DEVNULL
         except subprocess.TimeoutExpired:
             print("Failed Execution, Timed out")

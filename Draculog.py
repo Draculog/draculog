@@ -15,7 +15,8 @@ class GlobalValues:
     sensor_count = 2
 
     # Variables used for special execution
-    testing = True
+    testing = True  # Testing Execution
+    dummy = True  # Dummy Data creation
     verbose = True
     log = True
     timeoutSeconds = 1000
@@ -35,9 +36,9 @@ class GlobalValues:
     }
 
     # Variables used for headless control
-    minSize = 5000
-    maxSize = 20000
-    step = 5000
+    minSize = 50000
+    maxSize = 200000
+    step = 50000
     algorithms = ["b", "i", "f", "s"]
     algorithmMap = {
         "b": "Bubble Sort",
