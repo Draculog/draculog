@@ -11,7 +11,7 @@ Local_Draculog/power-c
 Local_Draculog/sorts
 /Source/sorts
 Local_Draculog/Source/sorts
-/Downloaded_Code
+/Downloaded_Code/*/*/*.cpp
 .DracuLog.py.swp
 DracuLog.py.save
 # Default ignored files
