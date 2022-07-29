@@ -113,19 +113,26 @@ else:
 
 
 ### Carbon Calculations
+# New formula for carbon used: 238g of C02 per kWh
 # Formula for Carbon used from electricity is 884.2 lbs of CO2 / 1 MegaWatt Hour
 # As per this EPA.gov article: https://www.epa.gov/energy/greenhouse-gases-equivalencies-calculator-calculations-and-references
 def Get_Carbon(energyUsed):
-    carbonFactor = 884.2  # CO2 in lbs used per 1 MegaWatt Hour
-    milliGramsFactor = 453.592  # 1 lbs
-    wattFactor = 1000000  # 1 MegaWatt is 1mil Watts, also 1 Joule = 1mil MicroJoules
-    secondsFactor = 3600  # 1 hour is 3600 seconds
-    milliGramsOfCarbon = carbonFactor * milliGramsFactor  # milligrams of Carbon per MegaWatt Hour
-    energyPerSecond = wattFactor * secondsFactor
-    milliGramsOfCarbonPerSecondOfEnergyFactor = milliGramsOfCarbon / energyPerSecond
-    # ((884.2 * 453593) / (1000000 * 3600)) * energy used (in Joules) == milligrams of carbon produced during execution
-    carbonConsumed = milliGramsOfCarbonPerSecondOfEnergyFactor * (energyUsed / wattFactor)
-    return carbonConsumed
+    # Input in microjoules
+    # Output in grams of CO2
+    #
+    # Convert microjoules to kilowatt-hour
+    # 1 microjoule is one millionth of a watt for one second
+    #
+    # 1. Divide microjoules by 1,000,000 to get joules (watt-seconds)
+    wattSeconds = energyUsed / 1000000
+    # 2. Divide joules by 3,600 seconds per hour to get watt-hours
+    wattHours = wattSeconds / 3600
+    # 3. Divide watt-hours by 1000 to get kilowatt-hours
+    kilowattHours = wattHours / 1000
+    # 4. Multiply kilowatt-hours by 238 to get grams of CO2
+    gramsCO2 = kilowattHours * 238
+
+    return gramsCO2
 
 
 ### Gathering User's Paths Functions
@@ -179,16 +186,16 @@ Results JSON Looks Like:
 JSON (Resultant Obj from execution for each submission) = {
     submissionId: int,
     compiledEnum: int,
-    resultsString: string,
+    resultsString: string, # STDerr/out case dependant
     algorithms: [ ## output 
         {
             algorithmName: string,
             sizeRuns: [
                 {
                     size: int,
-                    time: float,
-                    energy: float,
-                    carbon: float
+                    seconds: float,
+                    microjoules: float,
+                    gramsco2: float
                 }, .... (k times for going from size n -> m)
             ]
         }, .... (j times for going from algorithms n -> m)
@@ -197,14 +204,14 @@ JSON (Resultant Obj from execution for each submission) = {
 """
 
 
-def Compile_Headed_Data(result_json, submission_id, sensor_data, start_time, end_time, size, algo, status, output):
+def Compile_Headed_Data(submission_id, status, resultsString, output):
     # Compile Results String (String)
     # Compile Enum (Int)
 
     result_obj = {
         "submission_id": submission_id,
-        "compiledEnum": 1,
-        "resultsString": "",
+        "compiledEnum": status,
+        "resultsString": resultsString,
         "algorithms": output
     }
     if testing:
@@ -433,9 +440,9 @@ def Measure_Headed_User_Code():
                 # Gather all needed Data (Energy and Delta Time)
                 sizeRun_data = {
                     "size": size,
-                    "deltaTime": endTime - startTime,
-                    "energy": Sensors_List["PyRAPL"].Get_Data(),
-                    "carbon": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
+                    "seconds": endTime - startTime,
+                    "microjoules": Sensors_List["PyRAPL"].Get_Data(),
+                    "gramsco2": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
                 }
                 if testing:
                     print(sizeRun_data)
@@ -447,9 +454,10 @@ def Measure_Headed_User_Code():
         # # Compile it all together into one singular JSON #TODO fix this function
         # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
         #                     endTime, size, algo, status, output)
-
+        resultsString = ""
+        json_results = Compile_Headed_Data(User_Path_Split[2], status, resultsString, algorithms_data)
         # Save it as a file in user path
-        json.dump(algorithms_data, Results_File)
+        json.dump(json_results, Results_File)
         Results_File.close()
 
         # Save New User Path

@@ -67,9 +67,9 @@ class PyRAPL:
 
     # Normally is MicroJoule, will change to Joule for easier conversions
     def Get_Data(self):
-        data = ConvertJoule(self.data.pkg[0])
-        return data
-        # return self.data.pkg[0]
+        # data = ConvertJoule(self.data.pkg[0])
+        # return data
+        return self.data.pkg[0]
 
     def Print_Data(self):
         print("==========Energy==========")
