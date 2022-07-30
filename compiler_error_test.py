@@ -3,8 +3,9 @@ import sys
 import subprocess
 
 #built = os.system("cd " + "Downloaded_Code/0000/80/" + "&& make")
-commands = ["./Downloaded_Code/0000/80/code", "5000", "b", "False"]
-built = subprocess.run(commands, timeout=100, shell=True, capture_output=True, text=True)
+commands = ["./Headers/code", "10000", "i", "false"]
+commandsStr = "./Headers/code" + " " + "10000" + " " + "i" + " " + "false"
+built = subprocess.run(commandsStr, timeout=100, shell=True, capture_output=True, text=True)
 
 
 print(built)

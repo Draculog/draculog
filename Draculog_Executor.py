@@ -420,7 +420,7 @@ def Measure_Headed_User_Code():
                 ## TODO then just pass that into this as the variable. Ie C++ would be ["./", executable, ...]
                 ## TODO and python would be ["python3", executable, ...]
                 # Build Command list
-                commands = ["./" + User_Path + "/" + executable, str(size), algo]
+                commands = "./" + User_Path + "/" + executable + " " + str(size) + " " + algo + " " + Globe.verboseCode
 
                 # Build sensor threads
                 # Build_Sensor_Threads()

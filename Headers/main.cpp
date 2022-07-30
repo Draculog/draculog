@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
+#include <string.h>
 #include "header.h"
 using namespace std;
 
@@ -27,13 +28,17 @@ int main(int argc, char *argv[]) {
     if (argc > 2) {
        sortType = argv[2][0];
     }
-    bool verbose = false;
+
+    bool verbose = true;
     if (argc > 3) {
-//        verbose = (argv[3] == "false" | argv[3] == "quiet" | argv[3] == "f") ? false : true;
-        verbose = (argv[3] == "true" || argv[3] == "True" || argv[3] == "Loud");
+        string input = argv[3];
+        int strCmpResult = input.compare("false");
+        verbose = (strCmpResult == 0) ? false : true;
     }
     
-    cout << boolalpha << "Verbose: " << verbose << noboolalpha << endl;
+    if (verbose){
+        cout << boolalpha << "Verbose: " << verbose << noboolalpha << endl;
+    }
 
     // string filename;
     // cin >> filename;
