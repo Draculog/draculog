@@ -27,10 +27,10 @@ int main(int argc, char *argv[]) {
     if (argc > 2) {
        sortType = argv[2][0];
     }
-    bool verbose = true;
+    bool verbose = false;
     if (argc > 3) {
 //        verbose = (argv[3] == "false" | argv[3] == "quiet" | argv[3] == "f") ? false : true;
-        verbose = (argv[3] == "false" || argv[3] == "quiet");
+        verbose = (argv[3] == "true" || argv[3] == "True" || argv[3] == "Loud");
     }
     
     cout << boolalpha << "Verbose: " << verbose << noboolalpha << endl;

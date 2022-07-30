@@ -80,8 +80,8 @@ Sensors_List = {
     # "Time": Sensor_Time.Time(),
     # "Load": Sensor_Load.Load(),
     # "Temp": Sensor_Temp.Temperature(),
-    "PyRAPL": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
-    # "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
+    # "PyRAPL": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
+    "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
 }
 
 Sensors_Threads = []
@@ -320,14 +320,15 @@ def Execute_User_Code(status, commands):
         # TODO Spin up other thread to wait X time for seg faults
         # TODO-MultiCompiler This is where I would need to know a the needed compiler for their code
         try:
-            output = subprocess.run(commands, timeout=timeoutSeconds, capture_output=True, text=True)
+            output = subprocess.run(commands, shell=True, timeout=timeoutSeconds, capture_output=True, text=True)
             # , stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) # Old Flags
         except subprocess.TimeoutExpired:
             FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
             status = 4
-        except output.returncode != 0:
-            FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
-            status = 2
+
+    if output.returncode != 0:
+        FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
+        status = 2
 
     end_time = time.time()
     SensorGlobe.continueLogging = False
@@ -419,7 +420,7 @@ def Measure_Headed_User_Code():
                 ## TODO then just pass that into this as the variable. Ie C++ would be ["./", executable, ...]
                 ## TODO and python would be ["python3", executable, ...]
                 # Build Command list
-                commands = ["./" + User_Path + "/" + executable, str(size), algo, Globe.verboseCode]
+                commands = ["./" + User_Path + "/" + executable, str(size), algo]
 
                 # Build sensor threads
                 # Build_Sensor_Threads()
@@ -456,14 +457,20 @@ def Measure_Headed_User_Code():
                 # if output.stdout.split()
                 if status != 0:
                     if status == 2:
+                        FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + User_Path, dt.now(tz),
+                                            OnlyPrint=True)
                         resultsString = output.stderr
                         break
                     if status == 4:
-                        resultsString = "Timeout error, code ran for longer than " + str(Globe.timeoutSeconds)
+                        FrankenWeb.Log_Time("ERROR-*-\tTimeout Error - " + User_Path, dt.now(tz),
+                                            OnlyPrint=True)
+                        resultsString = "Timeout error, code ran for longer than " + str(timeoutSeconds)
                         break
-
-                if output.stderr.split()[7].lower() != "true":
+                outputString = output.stdout.split()
+                if outputString[outputString.index("sorted:") + 1] != "true":
                     status = 3
+                    FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + User_Path, dt.now(tz),
+                                        OnlyPrint=True)
                     resultsString = "Numbers failed to sort, please check your algorithm(s)"
                     break
 
@@ -471,8 +478,8 @@ def Measure_Headed_User_Code():
                 sizeRun_data = {
                     "size": size,
                     "seconds": endTime - startTime,
-                    "microjoules": Sensors_List["PyRAPL"].Get_Data(),
-                    "gramsco2": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
+                    "microjoules": Sensors_List["Dummy"].Get_Data(),
+                    "gramsco2": Get_Carbon(Sensors_List["Dummy"].Get_Data())
                 }
                 if testing:
                     print(sizeRun_data)
