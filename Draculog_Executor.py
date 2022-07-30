@@ -374,7 +374,7 @@ def Measure_Headed_User_Code():
             # Run the makefile, if it fails save that status (errors in their code)
             # built = os.system("cd " + User_Path + "&& make")
             built = subprocess.run("cd " + User_Path + " && make", shell=True, capture_output=True, text=True)
-            if built != 0:
+            if built.returncode != 0:
                 status = 1
                 Compile_To_Json(Compile_Headed_Data(User_Path_Split[2], status, built.stderr, "Failed-Compilation"), User_Path)
                 continue
