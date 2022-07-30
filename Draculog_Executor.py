@@ -80,8 +80,8 @@ Sensors_List = {
     # "Time": Sensor_Time.Time(),
     # "Load": Sensor_Load.Load(),
     # "Temp": Sensor_Temp.Temperature(),
-    # "PyRAPL": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
-    "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
+    "PyRAPL": Sensor_PyRAPL.PyRAPL()  # Closed for Testing Purposes
+    # "Dummy": Sensor_Dummy.Dummy()  # Sensor only used for Dummy data similar to PyRAPL
 }
 
 Sensors_Threads = []
@@ -478,8 +478,8 @@ def Measure_Headed_User_Code():
                 sizeRun_data = {
                     "size": size,
                     "seconds": endTime - startTime,
-                    "microjoules": Sensors_List["Dummy"].Get_Data(),
-                    "gramsco2": Get_Carbon(Sensors_List["Dummy"].Get_Data())
+                    "microjoules": Sensors_List["PyRAPL"].Get_Data(),
+                    "gramsco2": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
                 }
                 if testing:
                     print(sizeRun_data)

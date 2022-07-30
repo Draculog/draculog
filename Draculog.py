@@ -37,9 +37,9 @@ class GlobalValues:
     }
 
     # Variables used for headless control
-    minSize = 50000
-    maxSize = 200000
-    step = 50000
+    minSize = 5000
+    maxSize = 20000
+    step = 5000
     algorithms = ["b", "i", "f", "s"]
     algorithmMap = {
         "b": "Bubble Sort",
