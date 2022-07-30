@@ -23,8 +23,7 @@ DracuLog.py.save
 .idea/
 Sensors/__pycache__/
 __pycache__/
-Headers/-1_submitted_code.cpp
-Headers/0_submitted_code.cpp
+Headers/*_submitted_code.cpp
 Headers/code
 Headers/Makefile_OLD
 
