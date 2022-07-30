@@ -241,6 +241,11 @@ def Compile_Headless_Data(user_id, submission_id, sensor_data, start_time, end_t
 
     return result_obj
 
+def Compile_To_Json(json_results, User_Path):
+    Results_File = open(User_Path + "/" + Globe.Results_Json_Str, "w+")
+    json.dump(json_results, Results_File)
+    Results_File.close()
+    return
 
 # Adds Str User Path of Executed code to a separate file
 def Add_Executed_Path_To_File(UserPath, TimeStamp):
@@ -322,7 +327,7 @@ def Execute_User_Code(status, commands):
             status = 4
         except output.returncode != 0:
             FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
-            status = 3
+            status = 2
 
     end_time = time.time()
     SensorGlobe.continueLogging = False
@@ -334,6 +339,9 @@ def Measure_Headed_User_Code():
 
     # Loop for Each Submission
     for User_Path in Downloaded_Code_List:
+        # Overall Directory is 0, User ID is 1, Submission ID is 2
+        User_Path_Split = User_Path.split('/')
+
         if testing:
             print("Running " + User_Path + "'s Code")
         # Initialize Variables for this Submission
@@ -348,22 +356,28 @@ def Measure_Headed_User_Code():
             FrankenWeb.Log_Time(
                 "ERROR-*-\tUser's Submission @ " + User_Path + " already contains results, skipping",
                 dt.now(tz), OnlyPrint=True)
+            status = 5
             continue
-        else:
-            Results_File = open(User_Path + "/Results.json", "w+")
+        # else:
+        #     Results_File = open(User_Path + "/Results.json", "w+")
 
         # Find the MakeFile and execute it (Build Source Code), else return that the status is false/failed
         if not os.path.isfile(User_Path + "/Makefile"):
             FrankenWeb.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
+            status = 5
+            # (submission_id, status, resultsString, output)
+            Compile_To_Json(Compile_Headed_Data(User_Path_Split[2], status,
+                                                "No Makefile found, likely Downloader didn't find any source code",
+                                                "Failed-Draculog"), User_Path)
             continue
         else:
             # Run the makefile, if it fails save that status (errors in their code)
-            built = os.system("cd " + User_Path + "&& make")
+            # built = os.system("cd " + User_Path + "&& make")
+            built = subprocess.run("cd " + User_Path + " && make", shell=True, capture_output=True, text=True)
             if built != 0:
                 status = 1
-
-        # Overall Directory is 0, User ID is 1, Submission ID is 2
-        User_Path_Split = User_Path.split('/')
+                Compile_To_Json(Compile_Headed_Data(User_Path_Split[2], status, built.stderr, "Failed-Compilation"), User_Path)
+                continue
 
         '''
             Data Obj = {
@@ -381,6 +395,7 @@ def Measure_Headed_User_Code():
                 ]
             }
         '''
+        resultsString = "Successful Sorting"
         # For Each Submission, Loop for each algorithm in algorithms
         for algo in algorithms:
             if testing:
@@ -404,7 +419,7 @@ def Measure_Headed_User_Code():
                 ## TODO then just pass that into this as the variable. Ie C++ would be ["./", executable, ...]
                 ## TODO and python would be ["python3", executable, ...]
                 # Build Command list
-                commands = ["./" + User_Path + "/" + executable, str(size), algo]
+                commands = ["./" + User_Path + "/" + executable, str(size), algo, Globe.verboseCode]
 
                 # Build sensor threads
                 # Build_Sensor_Threads()
@@ -412,7 +427,7 @@ def Measure_Headed_User_Code():
                     Sensors_List[SensorStr].Build_Logger()
 
                 # TODO EXIT CODES:
-                ## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted/Seg Fault Error; 4 -> Timeout Error;
+                ## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted; 4 -> Timeout Error; 5 -> Draculog Failure
 
                 # Allow sensors to run
                 SensorGlobe.continueLogging = True
@@ -437,6 +452,21 @@ def Measure_Headed_User_Code():
                 # # Gather all sensor data
                 # measurements = Gather_Sensor_Data() # Gets a list of sensors and data points
 
+                # Check for Status errors from execution
+                # if output.stdout.split()
+                if status != 0:
+                    if status == 2:
+                        resultsString = output.stderr
+                        break
+                    if status == 4:
+                        resultsString = "Timeout error, code ran for longer than " + str(Globe.timeoutSeconds)
+                        break
+
+                if output.stderr.split()[7].lower() != "true":
+                    status = 3
+                    resultsString = "Numbers failed to sort, please check your algorithm(s)"
+                    break
+
                 # Gather all needed Data (Energy and Delta Time)
                 sizeRun_data = {
                     "size": size,
@@ -454,11 +484,12 @@ def Measure_Headed_User_Code():
         # # Compile it all together into one singular JSON #TODO fix this function
         # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
         #                     endTime, size, algo, status, output)
-        resultsString = ""
+
         json_results = Compile_Headed_Data(User_Path_Split[2], status, resultsString, algorithms_data)
         # Save it as a file in user path
-        json.dump(json_results, Results_File)
-        Results_File.close()
+        Compile_To_Json(json_results, User_Path)
+        # json.dump(json_results, Results_File)
+        # Results_File.close()
 
         # Save New User Path
         Add_Executed_Path_To_File(User_Path, round(time.time()))

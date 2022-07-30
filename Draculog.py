@@ -18,6 +18,7 @@ class GlobalValues:
     testing = True  # Testing Execution
     dummy = True  # Dummy Data creation
     verbose = True
+    verboseCode = False  # For whether student code speaks
     log = True
     timeoutSeconds = 1000
     header_file_usage = True

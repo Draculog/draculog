@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
 //        verbose = (argv[3] == "false" | argv[3] == "quiet" | argv[3] == "f") ? false : true;
         verbose = (argv[3] == "false" || argv[3] == "quiet");
     }
+    
     cout << boolalpha << "Verbose: " << verbose << noboolalpha << endl;
 
     // string filename;
@@ -43,25 +44,25 @@ int main(int argc, char *argv[]) {
 
     switch (sortType) {
        case 'b':
-          bubble_sort(a, size, false);
+          bubble_sort(a, size, verbose);
           break;
        case 'i':
-          insertion_sort(a, size, false);
+          insertion_sort(a, size, verbose);
           break;
        case 'f':
-          fast_insertion_sort(a, size, false);
+          fast_insertion_sort(a, size, verbose);
           break;
        case 's':
-          selection_sort(a, size, false);
+          selection_sort(a, size, verbose);
           break;
        case 'h':
-          heap_sort(a, size, false);
+          heap_sort(a, size, verbose);
           break;
        case 'm':
-          merge_sort(a, size, false);
+          merge_sort(a, size, verbose);
           break;
        case 'q':
-          quick_sort(a, size, false);
+          quick_sort(a, size, verbose);
           break;
        default:
           break;

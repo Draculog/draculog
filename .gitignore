@@ -12,6 +12,9 @@ Local_Draculog/sorts
 /Source/sorts
 Local_Draculog/Source/sorts
 /Downloaded_Code/*/*/*.cpp
+/Downloaded_Code/*/*/*.h
+/Downloaded_Code/*/*/code
+/Downloaded_Code/*/*/Makefile
 .DracuLog.py.swp
 DracuLog.py.save
 # Default ignored files
