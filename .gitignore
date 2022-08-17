@@ -29,7 +29,7 @@ Headers/Makefile_OLD
 
 
 
-*.cpp
-Downloaded_Code/Submission_1_Executed-1660774821/code
-*.h
-Downloaded_Code/Submission_1_Executed-1660774821/Makefile
+Downloaded_Code/*/*.cpp
+Downloaded_Code/*/code
+Downloaded_Code/*/*.h
+Downloaded_Code/*/Makefile
