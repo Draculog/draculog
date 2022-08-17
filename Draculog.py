@@ -8,6 +8,7 @@ from urllib import request
 
 import pytz
 
+
 class GlobalValues:
     # TimeZone String
     tzStr = "America/Los_Angeles"
@@ -16,7 +17,7 @@ class GlobalValues:
 
     # Variables used for special execution
     testing = True  # Testing Execution
-    dummy = True  # Dummy Data creation
+    dummy = False  # Dummy Data creation
     verbose = True
     verboseCode = False  # For whether student code speaks
     log = True
@@ -26,7 +27,7 @@ class GlobalValues:
     # Variables used to control what to log
     Measure_CPU_Temps = False
     Measure_Load_Avgs = False
-    Measure_CPU_Energy = False
+    Measure_CPU_Energy = True
 
     # Map of Sensors
     Sensor_List = {
@@ -68,6 +69,7 @@ class GlobalValues:
     Newly_Uploaded_Code_str = "Newly_Uploaded_Code.txt"
     Log_File_Str = "Draculog_Log.txt"
 
+
 # For the Shared Functions Below
 import json
 import requests
@@ -78,18 +80,25 @@ import sys
 import shutil
 from datetime import datetime as time
 
+
 class SharedDraculogFunctions:
     def __init__(self):
         # API Variables
         self.name = "FrankenWeb and Draculog Integration"
         self.FrankenWebApiToken = ""
-        self.FrankenWebApiBase = "https://greencodemk2.herokuapp.com/code/"
-        self.downloadToken = "notCompiled"
+        self.FrankenWebApiBase = "https://92e9-73-231-117-15.ngrok.io/api/code/"
+        ## Local Testing https://
+        ## NEW https://phrasal-faculty-356406.wl.r.appspot.com/api
+        self.downloadToken = "getUncompiledCode"
+        ## /code/getUncompiledCode
+        ## /submission/uploadResults
+        ## /code/$id_number
         self.uploadToken = "uploadResults"
         self.headers = {'Content-Type': 'application/json',
                         'Authorization': 'Bearer {0}'.format(self.FrankenWebApiToken),
                         'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
-                        'Accept': 'text/plain'}
+                        'Accept': 'text/plain',
+                        'ngrok-skip-browser-warning': 'True'}  # This final header bit is for ngrok ONLY
         self.LogFile = None
 
     def Call_Me(self):
@@ -120,13 +129,13 @@ class SharedDraculogFunctions:
     def Upload_To_FrankenWeb(self, jsonResultFile):
         response = None
         headers = {'Content-type': 'application/json',
-                    'Accept': 'text/plain'}
+                   'Accept': 'text/plain'}
         apiCall = '{0}{1}'.format(self.FrankenWebApiBase, self.uploadToken)
         jsonObj = json.loads(open(jsonResultFile, 'r+').read())
 
         try:
             response = requests.post(apiCall, json=jsonObj)
-            #print(response.text)
+            # print(response.text)
         except requests.exceptions.HTTPError as e:
             thisTime = time.now()
             self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error Failed for " + jsonResultFile, thisTime)
@@ -178,9 +187,9 @@ class SharedDraculogFunctions:
 def Remove_Log_File():
     os.remove("Draculog_Log.txt")
     LogFile = open(GlobalValues.Log_File_Str, "w+")
-    LogFile.write("==========\tSTART OF DAY " + str(datetime.datetime.now(pytz.timezone(GlobalValues.tzStr))) + "\t==========\n")
+    LogFile.write(
+        "==========\tSTART OF DAY " + str(datetime.datetime.now(pytz.timezone(GlobalValues.tzStr))) + "\t==========\n")
     return
-
 
 
 if __name__ == "__main__":
@@ -189,4 +198,3 @@ if __name__ == "__main__":
             Remove_Log_File()
 
     sys.exit(0)
-

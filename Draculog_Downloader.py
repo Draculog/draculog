@@ -7,23 +7,22 @@ Notes:
 Downloaded JSON from FrankenWeb looks as such:
 JSON (Pulled Obj) = {
   PulledData [0] = {
+      codeId: int for primary key purposes,
       submissionId: int,
-      userId: string,
-      codeName: string like "dummy.cpp",
-      mimetype: string like "cpp" or "c",
-      codeString: string of entire code,
+      filename: string like "file.cpp" or "file.c",
+      code: text of entire code,
       codeCompile: int (0 or 1 for compiled or not)
   }, ...
-  PulledData [N] = { ...
+  PulledData [N] = {
+    ...
   }
 }
 
 Directory to store User code looks like:
 Users_Code/
-  UserID/
-      SubmissionID/
-          Makefile
-          CPP_Code (Saved as userId_submissionId)
+  SubmissionId/
+      Makefile
+      CPP_Code (Saved as userId_submissionId)
 """
 
 # String Used for if user's don't have code submitted to FrankenWeb
@@ -148,34 +147,27 @@ def Setup_UnCompiled_Code(PulledJSON):
 
     for submission in PulledJSON:
         # Local Variables
-        u = str(submission["userId"])  # User ID
+        c = str(submission["codeId"])  # Code ID, but this is auto incrementing, so it's pretty much not useful
         s = str(submission["submissionId"])  # Submission ID
-        m = str(submission["mimetype"])  # Mimetype (cpp/c/py etc)
+        ## TODO Multi-compiler setup is here as well
+        # m = str(submission["mimetype"])  # Mimetype (cpp/c/py etc)
+        m = "cpp"
 
         # User file creation, checks if we need to make a headless or headed file name
-        codeFile = (s + "_submitted_sorts." + m) if header_file_usage else (u + "_" + s + "." + m)
+        codeFile = (c + "_" + s + "_submitted_sorts." + m) if header_file_usage else (c + "_" + s + "." + m)
 
-        # Checks if the User has a directory and if not, makes one
-        userpath = mainCodeDirectory + "/" + u
-        if not os.path.isdir(userpath):
-            FrankenWeb.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now(tz))
-            os.mkdir(userpath)
-
-        # Checks if the User already has a submission of this number, and if not makes one
-        submissionPath = userpath + "/" + s
-
-        ## TODO Check if we've already executed/uploaded this user before
-        # if os.path.isdir(submissionPath +
-
-        if os.path.isdir(submissionPath):
-            FrankenWeb.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(tz))
+        # Checks if the Submission already has a directory and if not, makes one. Otherwise, delete the old one and remake it
+        submissionPath = mainCodeDirectory + "/Submission_" + s
+        if not os.path.isdir(submissionPath):
+            FrankenWeb.Log_Time("UPDATE-*-\tNo Submission directory Found, Making new one", dt.now(tz))
+            os.mkdir(submissionPath)
+        else:
+            FrankenWeb.Log_Time("UPDATE-*-\tSubmission Directory detected, remaking it", dt.now(tz))
             shutil.rmtree(submissionPath)
-        FrankenWeb.Log_Time("UPDATE-*-\tMaking a new subdirectory for user " + u + "'s submission " + s, dt.now(tz))
-
-        os.mkdir(submissionPath)
+            os.mkdir(submissionPath)
 
         # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
-        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["codeString"])
+        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["code"])
         if User_Code_Exists:
             Create_Makefile(submissionPath, codeFile)
             if header_file_usage:
@@ -210,6 +202,7 @@ def main():
     # Download all Un-Compiled (ie Un-Tested) code from FrankenWeb's Website
     # End Result is a File called "New_Downloaded_Code.txt" that contains all newly downloaded Submissions Paths
     UnCompiledCode = SharedDraculogFunctions.Create_Dummy_Data() if dummy else FrankenWeb.Download_From_FrankenWeb()
+
     if UnCompiledCode is None:
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(1)
