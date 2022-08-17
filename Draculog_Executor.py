@@ -7,20 +7,18 @@
 Notes:
 
 Directory used to store User code looks like:
-Users_Code/
-  User_ID/
-      Submission_ID/
-          Makefile
-          JSON_Result (If tested)
-          CPP_Code (Saved as userId_submissionId)
+Downloaded_Code/
+  Submission_ID/
+      Makefile
+      JSON_Result (If tested)
+      CPP_Code (Saved as userId_submissionId)
 
 Directory used to store User code after being executed:
-Users_Code/
-  User_ID/
-      Submission_ID_TIMESTAMP(Unix Time, Down to Minute)/
-          Makefile
-          JSON_Result
-          CPP_Code (Saved as userId_submissionId)
+Downloaded_Code/
+  Submission_ID_TIMESTAMP(Unix Time, Down to Minute)/
+      Makefile
+      JSON_Result
+      CPP_Code (Saved as userId_submissionId)
 
 TODO Transition to using Power-C like we were before, with a usable header file
 Results JSON Looks Like:

@@ -86,14 +86,14 @@ class SharedDraculogFunctions:
         # API Variables
         self.name = "FrankenWeb and Draculog Integration"
         self.FrankenWebApiToken = ""
-        self.FrankenWebApiBase = "https://92e9-73-231-117-15.ngrok.io/api/code/"
+        self.FrankenWebApiBase = "https://92e9-73-231-117-15.ngrok.io/api/"
         ## Local Testing https://
         ## NEW https://phrasal-faculty-356406.wl.r.appspot.com/api
-        self.downloadToken = "getUncompiledCode"
+        self.downloadToken = "code/getUncompiledCode"
         ## /code/getUncompiledCode
         ## /submission/uploadResults
         ## /code/$id_number
-        self.uploadToken = "uploadResults"
+        self.uploadToken = "submission/uploadResults"
         self.headers = {'Content-Type': 'application/json',
                         'Authorization': 'Bearer {0}'.format(self.FrankenWebApiToken),
                         'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
