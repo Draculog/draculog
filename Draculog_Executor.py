@@ -209,7 +209,7 @@ def Compile_Headed_Data(submission_id, status, resultsString, output):
     # Compile Enum (Int)
 
     result_obj = {
-        "submission_id": submission_id,
+        "submission_id": submission_id.split[1],
         "compiledEnum": status,
         "resultsString": resultsString,
         "algorithms": output
@@ -220,11 +220,10 @@ def Compile_Headed_Data(submission_id, status, resultsString, output):
 
 
 # Compiles Given Data into a Single JSON Object
-def Compile_Headless_Data(user_id, submission_id, sensor_data, start_time, end_time, status):
+def Compile_Headless_Data(submission_id, sensor_data, start_time, end_time, status):
     combined_sensor_data = Combine_Data(sensor_data)
 
     result_obj = {
-        "userId": user_id,
         "submissionId": submission_id,
         "result": {
             "start_time": start_time,
@@ -367,7 +366,7 @@ def Measure_Headed_User_Code():
             FrankenWeb.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
             status = 5
             # (submission_id, status, resultsString, output)
-            Compile_To_Json(Compile_Headed_Data(User_Path_Split[2], status,
+            Compile_To_Json(Compile_Headed_Data(User_Path_Split[1], status,
                                                 "No Makefile found, likely Downloader didn't find any source code",
                                                 "Failed-Draculog"), User_Path)
             continue
@@ -377,7 +376,7 @@ def Measure_Headed_User_Code():
             built = subprocess.run("cd " + User_Path + " && make", shell=True, capture_output=True, text=True)
             if built.returncode != 0:
                 status = 1
-                Compile_To_Json(Compile_Headed_Data(User_Path_Split[2], status, built.stderr, "Failed-Compilation"), User_Path)
+                Compile_To_Json(Compile_Headed_Data(User_Path_Split[1], status, built.stderr, "Failed-Compilation"), User_Path)
                 continue
 
         '''
@@ -492,7 +491,7 @@ def Measure_Headed_User_Code():
         # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
         #                     endTime, size, algo, status, output)
 
-        json_results = Compile_Headed_Data(User_Path_Split[2], status, resultsString, algorithms_data)
+        json_results = Compile_Headed_Data(User_Path_Split[1], status, resultsString, algorithms_data)
         # Save it as a file in user path
         Compile_To_Json(json_results, User_Path)
         # json.dump(json_results, Results_File)
@@ -537,7 +536,7 @@ def Measure_Headless_User_Code():
         else:
             Results_File = open(User_Path + "/Results.json", "w+")
 
-        # Overall Directory is 0, User ID is 1, Submission ID is 2
+        # Upper Dir is 0, Submission Dir is 1
         User_Path_Split = User_Path.split('/')
 
         # TODO-MultiCompiler This is another thing that would be modified for multi usage
@@ -564,7 +563,7 @@ def Measure_Headless_User_Code():
         measurements = Gather_Sensor_Data()
 
         # Compile it all together into one singular JSON
-        result_json = Compile_Headless_Data(User_Path_Split[1], User_Path_Split[2], measurements, startTime, endTime,
+        result_json = Compile_Headless_Data(User_Path_Split[0], User_Path_Split[1], measurements, startTime, endTime,
                                             status)
 
         # Save it as a file in user path
@@ -586,6 +585,8 @@ def Clean_Up():
     # print("=============== Length of ExCodeList is " + str(len(Executed_Code_List)) + " vs Len of DLCode " + str(len(Downloaded_Code_List)))
     # print(Executed_Code_List)
     # print(Downloaded_Code_List)
+
+    FrankenWeb.Log_Time("UPDATE-*-\tCleaning up already run directories now", dt.now(tz))
 
     # Moves all Files in old directory to new directory
     for index in range(0, len(Executed_Code_List)):
