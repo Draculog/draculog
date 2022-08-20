@@ -86,9 +86,7 @@ class SharedDraculogFunctions:
         # API Variables
         self.name = "FrankenWeb and Draculog Integration"
         self.FrankenWebApiToken = ""
-        self.FrankenWebApiBase = "https://92e9-73-231-117-15.ngrok.io/api/"
-        ## Local Testing https://
-        ## NEW https://phrasal-faculty-356406.wl.r.appspot.com/api
+        self.FrankenWebApiBase = "https://b04c-73-231-117-15.ngrok.io/api/"
         self.downloadToken = "code/getUncompiledCode"
         ## /code/getUncompiledCode
         ## /submission/uploadResults
@@ -134,7 +132,7 @@ class SharedDraculogFunctions:
         jsonObj = json.loads(open(jsonResultFile, 'r+').read())
 
         try:
-            response = requests.post(apiCall, json=jsonObj)
+            response = requests.post(apiCall, json=jsonObj, headers=headers)
             # print(response.text)
         except requests.exceptions.HTTPError as e:
             thisTime = time.now()
@@ -149,7 +147,7 @@ class SharedDraculogFunctions:
             return True
         else:
             thisTime = time.now()
-            self.Log_Time("FATAL-*-\tUploading Code Failed for " + jsonResultFile, thisTime)
+            self.Log_Time("FATAL-*-\tUploading Code Failed Website Side for " + jsonResultFile, thisTime)
             self.Log_Time("FATAL-^-\tResponse: ", thisTime)  # Might not be doing what I want
             self.Log_Time(str(response.raise_for_status()), thisTime)  # Might not be doing what I want
             response.close()

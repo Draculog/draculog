@@ -207,7 +207,7 @@ def Compile_Headed_Data(submission_id, status, resultsString, output):
     # Compile Enum (Int)
 
     result_obj = {
-        "submission_id": submission_id.split('_')[1],
+        "submissionId": submission_id.split('_')[1],
         "compiledEnum": status,
         "resultsString": resultsString,
         "algorithms": output
