@@ -10,25 +10,33 @@
             "size": 50000,
             "time": 60,
             "energy": 120,
-            "carbon": 1
+            "carbon": 1,
+	    "enum": 0,
+            "results": "All data sorted"
         },
         {
             "size": 100000,
             "time": 120,
             "energy": 180,
-            "carbon": 2 
+            "carbon": 2,
+	    "enum": 0,
+            "results": "All data sorted"
         },
         {
             "size": 150000,
             "time": 240,
             "energy": 240,
-            "carbon": 3 
+            "carbon": 3,
+	    "enum": 0,
+            "results": "All data sorted" 
         },
         {
             "size": 200000,
             "time": 480,
             "energy": 300,
-            "carbon": 4 
+            "carbon": 4,
+	    "enum": 0,
+            "results": "All data sorted" 
         }
         ]
     },
@@ -39,25 +47,33 @@
             "size": 50000,
             "time": 45,
             "energy": 110,
-            "carbon": 1
+            "carbon": 1,
+	    "enum": 0,
+            "results": "All data sorted"
         },
         {
             "size": 100000,
             "time": 80,
             "energy": 180,
-            "carbon": 2 
+            "carbon": 2,
+	    "enum": 0,
+            "results": "All data sorted" 
         },
         {
             "size": 150000,
             "time": 160,
             "energy": 240,
-            "carbon": 3 
+            "carbon": 3,
+	    "enum": 0,
+            "results": "All data sorted" 
         },
         {
             "size": 200000,
             "time": 400,
             "energy": 300,
-            "carbon": 4 
+            "carbon": 4,
+	    "enum": 0,
+            "results": "All data sorted" 
         }
         ]
     },
@@ -68,13 +84,17 @@
             "size": 50000,
             "time": 40,
             "energy": 100,
-            "carbon": 1
+            "carbon": 1,
+	    "enum": 0,
+            "results": "All data sorted"
         },
         {
             "size": 100000,
             "time": 75,
             "energy": 180,
-            "carbon": 2 
+            "carbon": 2,
+	    "enum": 1,
+            "results": "Critical Error" 
         }
         ]
     }

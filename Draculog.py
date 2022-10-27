@@ -8,6 +8,7 @@ from urllib import request
 
 import pytz
 
+
 class GlobalValues:
     # TimeZone String
     tzStr = "America/Los_Angeles"
@@ -15,7 +16,10 @@ class GlobalValues:
     sensor_count = 2
 
     # Variables used for special execution
+    testing = True  # Testing Execution
+    dummy = False  # Dummy Data creation
     verbose = True
+    verboseCode = False  # For whether student code speaks
     log = True
     timeoutSeconds = 1000
     header_file_usage = True
@@ -23,7 +27,30 @@ class GlobalValues:
     # Variables used to control what to log
     Measure_CPU_Temps = False
     Measure_Load_Avgs = False
-    Measure_CPU_Energy = False
+    Measure_CPU_Energy = True
+
+    # Map of Sensors
+    Sensor_List = {
+        "Time": None,
+        "Load": None,
+        "Temp": None,
+        "PyRapl": None
+    }
+
+    # Variables used for headless control
+    minSize = 5000
+    maxSize = 20000
+    step = 5000
+    algorithms = ["b", "i", "f", "s"]
+    algorithmMap = {
+        "b": "Bubble Sort",
+        "i": "Insertion Sort",
+        "f": "Fast Insertion Sort",
+        "s": "Selection Sort",
+        "h": "Heap Sort",
+        "m": "Merge Sort",
+        "q": "Quick Sort"
+    }
 
     # Special Unifying Strings
     Executable_Str = "code"
@@ -42,6 +69,7 @@ class GlobalValues:
     Newly_Uploaded_Code_str = "Newly_Uploaded_Code.txt"
     Log_File_Str = "Draculog_Log.txt"
 
+
 # For the Shared Functions Below
 import json
 import requests
@@ -52,18 +80,23 @@ import sys
 import shutil
 from datetime import datetime as time
 
+
 class SharedDraculogFunctions:
     def __init__(self):
         # API Variables
         self.name = "FrankenWeb and Draculog Integration"
         self.FrankenWebApiToken = ""
-        self.FrankenWebApiBase = "https://greencodemk2.herokuapp.com/code/"
-        self.downloadToken = "notCompiled"
-        self.uploadToken = "uploadResults"
+        self.FrankenWebApiBase = "https://b04c-73-231-117-15.ngrok.io/api/"
+        self.downloadToken = "code/getUncompiledCode"
+        ## /code/getUncompiledCode
+        ## /submission/uploadResults
+        ## /code/$id_number
+        self.uploadToken = "submission/uploadResults"
         self.headers = {'Content-Type': 'application/json',
                         'Authorization': 'Bearer {0}'.format(self.FrankenWebApiToken),
                         'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
-                        'Accept': 'text/plain'}
+                        'Accept': 'text/plain',
+                        'ngrok-skip-browser-warning': 'True'}  # This final header bit is for ngrok ONLY
         self.LogFile = None
 
     def Call_Me(self):
@@ -93,14 +126,14 @@ class SharedDraculogFunctions:
     # Calls Green code to upload a user's JSON result to Green Code's website
     def Upload_To_FrankenWeb(self, jsonResultFile):
         response = None
-        headers = {'Content-type': 'application/json', 
-                    'Accept': 'text/plain'}
+        headers = {'Content-type': 'application/json',
+                   'Accept': 'text/plain'}
         apiCall = '{0}{1}'.format(self.FrankenWebApiBase, self.uploadToken)
         jsonObj = json.loads(open(jsonResultFile, 'r+').read())
 
         try:
-            response = requests.post(apiCall, json=jsonObj)
-            #print(response.text)
+            response = requests.post(apiCall, json=jsonObj, headers=headers)
+            # print(response.text)
         except requests.exceptions.HTTPError as e:
             thisTime = time.now()
             self.Log_Time("FATAL-*-\tUploading Code Failed with HTTP Error Failed for " + jsonResultFile, thisTime)
@@ -114,7 +147,7 @@ class SharedDraculogFunctions:
             return True
         else:
             thisTime = time.now()
-            self.Log_Time("FATAL-*-\tUploading Code Failed for " + jsonResultFile, thisTime)
+            self.Log_Time("FATAL-*-\tUploading Code Failed Website Side for " + jsonResultFile, thisTime)
             self.Log_Time("FATAL-^-\tResponse: ", thisTime)  # Might not be doing what I want
             self.Log_Time(str(response.raise_for_status()), thisTime)  # Might not be doing what I want
             response.close()
@@ -139,11 +172,21 @@ class SharedDraculogFunctions:
             self.LogFile = None
         return
 
+    # Creates Dummy JSON file from given data
+    @staticmethod
+    def Create_Dummy_Data():
+        f = open('Dummy_Data/Dummy_Data_Download.json')
+        data = json.load(f)
+        return data
+
+
 ### Functions for Basic Maintenance and Testing
+# Removes Old Log File
 def Remove_Log_File():
     os.remove("Draculog_Log.txt")
     LogFile = open(GlobalValues.Log_File_Str, "w+")
-    LogFile.write("==========\tSTART OF DAY " + str(datetime.datetime.now(pytz.timezone(GlobalValues.tzStr))) + "\t==========\n")
+    LogFile.write(
+        "==========\tSTART OF DAY " + str(datetime.datetime.now(pytz.timezone(GlobalValues.tzStr))) + "\t==========\n")
     return
 
 
@@ -153,4 +196,3 @@ if __name__ == "__main__":
             Remove_Log_File()
 
     sys.exit(0)
-

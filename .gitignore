@@ -1,10 +1,20 @@
+Downloading_Code.txt
+Executing_Code.txt
+Uploading_Code.txt
+Newly_Executed_Code.txt
+Newly_Downloaded_Code.txt
+Newly_Uploaded_Code.txt
+Draculog_Log.txt
 /power-c
 Local_Draculog/power-c
 /sorts
 Local_Draculog/sorts
 /Source/sorts
 Local_Draculog/Source/sorts
-/Downloaded_Code
+/Downloaded_Code/*/*/*.cpp
+/Downloaded_Code/*/*/*.h
+/Downloaded_Code/*/*/code
+/Downloaded_Code/*/*/Makefile
 .DracuLog.py.swp
 DracuLog.py.save
 # Default ignored files
@@ -13,9 +23,13 @@ DracuLog.py.save
 .idea/
 Sensors/__pycache__/
 __pycache__/
-Draculog_Log.txt
-Newly_Executed_Code.txt
-Newly_Downloaded_Code.txt
-Headers/-1_submitted_code.cpp
+Headers/*_submitted_code.cpp
+Headers/code
+Headers/Makefile_OLD
 
 
+
+Downloaded_Code/*/*.cpp
+Downloaded_Code/*/code
+Downloaded_Code/*/*.h
+Downloaded_Code/*/Makefile

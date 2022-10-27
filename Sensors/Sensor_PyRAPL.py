@@ -9,6 +9,11 @@ try:
 except ModuleNotFoundError as e:
     from Sensors.Sensor import GlobalSensorValues as Globe
 
+
+def ConvertJoule(microJoule):
+    return microJoule / 1000000
+
+
 class PyRAPL:
     def __init__(self, name="PyRAPL", interval=Globe.interval, organizeMe=False, threadMe=False):
         super().__init__()
@@ -60,7 +65,10 @@ class PyRAPL:
         self.meter = None
         return
 
+    # Normally is MicroJoule, will change to Joule for easier conversions
     def Get_Data(self):
+        # data = ConvertJoule(self.data.pkg[0])
+        # return data
         return self.data.pkg[0]
 
     def Print_Data(self):

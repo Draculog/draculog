@@ -1,1 +1,0 @@
-{"userId": "115005222949393991754", "submissionId": "91", "result": {"start_time": 1649807762.8932028, "end_time": 1649807764.2610614, "delta_time": 1.367858648300171, "status": "Completed Execution", "measurements": {"Sensor-Time": [1649807762.892542], "Sensor-Load": [[1649807762.8927002, 0.15]], "Sensor-Temp": [[1649807762.8928537, 33.33]]}, "Sensor-PyRAPL": 22594474.0}}

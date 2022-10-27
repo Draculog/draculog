@@ -7,23 +7,22 @@ Notes:
 Downloaded JSON from FrankenWeb looks as such:
 JSON (Pulled Obj) = {
   PulledData [0] = {
+      codeId: int for primary key purposes,
       submissionId: int,
-      userId: string,
-      codeName: string like "dummy.cpp",
-      mimetype: string like "cpp" or "c",
-      codeString: string of entire code,
+      filename: string like "file.cpp" or "file.c",
+      code: text of entire code,
       codeCompile: int (0 or 1 for compiled or not)
   }, ...
-  PulledData [N] = { ...
+  PulledData [N] = {
+    ...
   }
 }
 
 Directory to store User code looks like:
 Users_Code/
-  UserID/
-      SubmissionID/
-          Makefile
-          CPP_Code (Saved as userId_submissionId)
+  SubmissionId/
+      Makefile
+      CPP_Code (Saved as userId_submissionId)
 """
 
 # String Used for if user's don't have code submitted to FrankenWeb
@@ -48,6 +47,7 @@ FrankenWeb = SharedDraculogFunctions()
 tz = pytz.timezone(Globe.tzStr)
 
 # Control Variables
+dummy = Globe.dummy
 verbose = Globe.verbose
 log = Globe.log
 control_file = None
@@ -63,6 +63,8 @@ else:
 mainCodeDirectory = Globe.User_Code_Directory_Name
 headerFileLocation = Globe.Header_File_Location
 
+### Testing Functions
+
 ### Code Set Up Functions
 # Creates an MakeFile for the User's Code
 def Create_Makefile(path, codeFile):
@@ -74,11 +76,11 @@ def Create_Makefile(path, codeFile):
 
     # Makes a special makefile dependent on if we are using a main header file or not
     if header_file_usage:
-        main_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(FILES) -o " + Globe.Executable_Str + "\n"
-        exec_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(FILES) -o " + Globe.Executable_Str + "\n"
+        exec_str = "\nmain: deps $(MAIN_HEADER)\n"
+        main_str = "\t$(COM) $(FLAGS) $(MAIN_HEADER) $(HEADER) $(STUDENT_CODE) -o " + Globe.Executable_Str + "\n"
     else:
+        exec_str = "\nmain:\n"
         main_str = "\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n"
-        exec_str = "\t$(COM) $(FLAGS) " + Globe.Executable_Str + " " + codeFile + "\n"
 
     # - catches error when executing makefile
     try:
@@ -88,16 +90,18 @@ def Create_Makefile(path, codeFile):
         if header_file_usage:
             makefile.write("MAIN_HEADER = " + Globe.Main_Header_File_Str + "\n")
             makefile.write("HEADER = " + Globe.Header_File_Str + "\n")
-        makefile.write("all: main\n")
+            makefile.write("STUDENT_CODE = " + codeFile + "\n")
+        makefile.write("\nall: main\n")
         if header_file_usage:
-            makefile.write("deps: $(HEADER)\n")
-        makefile.write(main_str)
+            makefile.write("\ndeps: $(HEADER)\n")
         makefile.write(exec_str)
+        makefile.write(main_str)
         makefile.close()
     except Exception as myE:
         FrankenWeb.Log_Time("ERROR-*-\tMakefile creation error: " + str(myE), dt.now(tz), Override=True)
 
     return
+
 
 # Copies over Header Files to user directory
 def Copy_Header_Files(userPath):
@@ -110,6 +114,10 @@ def Copy_Header_Files(userPath):
 # Creates a File containing the User's Code
 def Create_User_Code(path, codeFile, codeString):
     # Write the submitted code to the code file, and if it's None run a 60-second baseline measure
+    if Globe.dummy:
+        shutil.copyfile("Headers/0_submitted_code.cpp", path+"/"+codeFile)
+        return codeString is not None
+
     if codeString is not None:
         file = open(path + "/" + codeFile, "w")
         file.write(codeString)
@@ -131,7 +139,7 @@ def Add_Downloaded_Path_To_File(UserPath):
 
 # TODO Create a test where we pass it a list of dictionaries, passes if it makes them
 # Goes through all pulled users (from un-compiled code) and creates directories with a make file in them
-def Setup_UnCompiled_Headless_Code(PulledJSON):
+def Setup_UnCompiled_Code(PulledJSON):
     # Make Main Directory
     if not os.path.isdir(mainCodeDirectory):
         FrankenWeb.Log_Time("UPDATE-*-\tNo Main directory Found, Making new one", dt.now(tz), OnlyPrint=verbose)
@@ -139,34 +147,27 @@ def Setup_UnCompiled_Headless_Code(PulledJSON):
 
     for submission in PulledJSON:
         # Local Variables
-        u = str(submission["userId"])  # User ID
+        c = str(submission["codeId"])  # Code ID, but this is auto incrementing, so it's pretty much not useful
         s = str(submission["submissionId"])  # Submission ID
-        m = str(submission["mimetype"])  # Mimetype (cpp/c/py etc)
+        ## TODO Multi-compiler setup is here as well
+        # m = str(submission["mimetype"])  # Mimetype (cpp/c/py etc)
+        m = "cpp"
 
         # User file creation, checks if we need to make a headless or headed file name
-        codeFile = (s + "_submitted_sorts." + m) if header_file_usage else (u + "_" + s + "." + m)
+        codeFile = (c + "_" + s + "_submitted_sorts." + m) if header_file_usage else (c + "_" + s + "." + m)
 
-        # Checks if the User has a directory and if not, makes one
-        userpath = mainCodeDirectory + "/" + u
-        if not os.path.isdir(userpath):
-            FrankenWeb.Log_Time("UPDATE-*-\tNo User directory Found, Making new one", dt.now(tz))
-            os.mkdir(userpath)
-
-        # Checks if the User already has a submission of this number, and if not makes one
-        submissionPath = userpath + "/" + s
-
-        ## TODO Check if we've already executed/uploaded this user before
-        # if os.path.isdir(submissionPath +
-
-        if os.path.isdir(submissionPath):
-            FrankenWeb.Log_Time("UPDATE-*-\tSubmission already exists, removing previous submission", dt.now(tz))
+        # Checks if the Submission already has a directory and if not, makes one. Otherwise, delete the old one and remake it
+        submissionPath = mainCodeDirectory + "/Submission_" + s
+        if not os.path.isdir(submissionPath):
+            FrankenWeb.Log_Time("UPDATE-*-\tNo Submission directory Found, Making new one", dt.now(tz))
+            os.mkdir(submissionPath)
+        else:
+            FrankenWeb.Log_Time("UPDATE-*-\tSubmission Directory detected, remaking it", dt.now(tz))
             shutil.rmtree(submissionPath)
-        FrankenWeb.Log_Time("UPDATE-*-\tMaking a new subdirectory for user " + u + "'s submission " + s, dt.now(tz))
-
-        os.mkdir(submissionPath)
+            os.mkdir(submissionPath)
 
         # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
-        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["codeString"])
+        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["code"])
         if User_Code_Exists:
             Create_Makefile(submissionPath, codeFile)
             if header_file_usage:
@@ -200,12 +201,13 @@ def main():
 
     # Download all Un-Compiled (ie Un-Tested) code from FrankenWeb's Website
     # End Result is a File called "New_Downloaded_Code.txt" that contains all newly downloaded Submissions Paths
-    UnCompiledCode = FrankenWeb.Download_From_FrankenWeb()
+    UnCompiledCode = SharedDraculogFunctions.Create_Dummy_Data() if dummy else FrankenWeb.Download_From_FrankenWeb()
+
     if UnCompiledCode is None:
         os.remove(Globe.Downloading_Code_Str)
         sys.exit(1)
 
-    Setup_UnCompiled_Headless_Code(UnCompiledCode)
+    Setup_UnCompiled_Code(UnCompiledCode)
 
     # Delete the control Text File
     control_file.close()
@@ -219,13 +221,14 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
-        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
-        os.remove(Globe.Downloading_Code_Str)
-        os.remove(Globe.Newly_Downloaded_Code_Str)
-        sys.exit(1)
+    main()
+    # try:
+    #     main()
+    # except Exception as e:
+    #     FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
+    #     FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+    #     os.remove(Globe.Downloading_Code_Str)
+    #     os.remove(Globe.Newly_Downloaded_Code_Str)
+    #     sys.exit(1)
 
     sys.exit(0)

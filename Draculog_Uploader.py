@@ -4,44 +4,34 @@
 
 """
 Notes:
-Downloaded JSON from FrankenWeb looks as such:
-JSON (Pulled Obj) = {
-  PulledData [0] = {
-      submissionId: int,
-      userId: string,
-      codeName: string like "dummy.cpp",
-      mimetype: string like "cpp" or "c",
-      codeString: string of entire code,
-      codeCompile: int (0 or 1 for compiled or not)
-  }, ...
-  PulledData [N] = { ...
-  }
-}
-JSON Object to upload looks like
-JSON (Resultant Obj) = {
-    User [0] = {
-        id: int,
-        submissionId: int,
-        result:{
-            length: delta time,
-			start time: start time,
-			end time: end time,
-            energyConsumed: MicroJoules,
-            sensor 1:[(time_data,measure_data), (t_data,m_data), ...],
-            ...
-            sensor N:[(t_data,m_data), ...]
-        }
-    } , User [1] {
-      ...
-    } , ...
+Directory used to store User code after being executed:
+Downloaded_Code/
+  Submission_ID_TIMESTAMP(Unix Time, Down to Minute)/
+      Makefile
+      JSON_Result
+      CPP_Code (Saved as userId_submissionId)
 
-Directory to store User code looks like:
-Users_Code/
-  User_ID/
-      Submission_ID_TIMESTAMP(Unix Time, Down to Minute)/
-          Makefile
-          JSON_Result
-          CPP_Code (Saved as userId_submissionId)
+TODO Transition to using Power-C like we were before, with a usable header file
+Results JSON Looks Like:
+JSON (Resultant Obj from execution for each submission) = {
+    submissionId: int,
+    compiledEnum: int,
+    resultsString: string,
+    algorithms: [
+        {
+            algorithmName: string,
+            sizeRuns: [
+                {
+                    size: int,
+                    time: float,
+                    energy: float,
+                    carbon: float
+                }, .... (k times for going from size n -> m)
+            ]
+        }, .... (j times for going from algorithms n -> m)
+    ]
+}
+
 """
 
 # For Linux Time Operations
