@@ -221,14 +221,13 @@ def main():
 
 # Main Execution
 if __name__ == "__main__":
-    main()
-    # try:
-    #     main()
-    # except Exception as e:
-    #     FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
-    #     FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
-    #     os.remove(Globe.Downloading_Code_Str)
-    #     os.remove(Globe.Newly_Downloaded_Code_Str)
-    #     sys.exit(1)
+    try:
+        main()
+    except Exception as e:
+        FrankenWeb.Log_Time("FATAL-*-\tSome Error Happened, Exiting Downloader now", dt.now(tz), Override=True)
+        FrankenWeb.Log_Time("FATAL-*-\tError:\n" + str(e), dt.now(tz), Override=True)
+        os.remove(Globe.Downloading_Code_Str)
+        os.remove(Globe.Newly_Downloaded_Code_Str)
+        sys.exit(1)
 
     sys.exit(0)
