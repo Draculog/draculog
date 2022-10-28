@@ -5,6 +5,8 @@
 
 """
 Notes:
+# TODO EXIT CODES:
+## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted; 4 -> Timeout Error; 5 -> Draculog Failure
 
 Directory used to store User code looks like:
 Downloaded_Code/
