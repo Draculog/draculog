@@ -137,6 +137,61 @@ def Add_Downloaded_Path_To_File(UserPath):
     return
 
 
+
+def Configure_Method(submission):
+    submissionID = str(submission["submissionId"])
+    submissionPath = mainCodeDirectory + "/Submission_" + submissionID
+
+    if not os.path.isdir(submissionPath):
+            # If submission ID is not found, we make a new one
+            FrankenWeb.Log_Time("UPDATE-*-\tNo Submission directory Found, Making new one", dt.now(tz))
+            os.mkdir(submissionPath)
+    else:
+        # If submission ID is found, we delete the directory and make a new one
+        FrankenWeb.Log_Time("UPDATE-*-\tSubmission Directory detected, remaking it", dt.now(tz))
+        shutil.rmtree(submissionPath)
+        os.mkdir(submissionPath)
+    
+    language = str(submission["mimetype"])
+    codeID = str(submission["codeId"])
+
+    if language == "cpp":
+        codeFile = (codeID + "_" + submissionID + "_submitted_sorts." + language) if header_file_usage else (codeID + "_" + submissionID + "." + language)
+        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["code"])
+        if User_Code_Exists:
+            Create_Makefile(submissionPath, codeFile)
+            if header_file_usage:
+                Copy_Header_Files(submissionPath)
+            Add_Downloaded_Path_To_File(submissionPath)
+        else:
+            shutil.rmtree(submissionPath)
+
+    if language == "py":
+        # TODO configure python codefile setup INCOMPLETE
+        # 
+        codeFile = (codeID + "_" + submissionID + "_submitted_sorts." + language)
+        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["code"])
+
+        return
+
+    if language == "java":
+        # TODO configure java codefile setup
+        return
+
+    return submissionPath, codeFile
+    
+
+
+
+# TODO create parameter label dictionary
+#     
+def Get_Parameters(submission):
+    return 
+
+
+
+
+
 # TODO Create a test where we pass it a list of dictionaries, passes if it makes them
 # Goes through all pulled users (from un-compiled code) and creates directories with a make file in them
 def Setup_UnCompiled_Code(PulledJSON):
@@ -147,34 +202,41 @@ def Setup_UnCompiled_Code(PulledJSON):
 
     for submission in PulledJSON:
         # Local Variables
-        c = str(submission["codeId"])  # Code ID, but this is auto incrementing, so it's pretty much not useful
-        s = str(submission["submissionId"])  # Submission ID
-        ## TODO Multi-compiler setup is here as well
-        # m = str(submission["mimetype"])  # Mimetype (cpp/c/py etc)
-        m = "cpp"
+        #c = str(submission["codeId"])  # Code ID, but this is auto incrementing, so it's pretty much not useful
+
+        submissionPath, codeFile = Configure_Method(submission)
+
+        # TODO create parameter dictionary 
+        Get_Parameters(submission)
+
+
+
 
         # User file creation, checks if we need to make a headless or headed file name
-        codeFile = (c + "_" + s + "_submitted_sorts." + m) if header_file_usage else (c + "_" + s + "." + m)
+        # codeFile = (c + "_" + submissionID + "_submitted_sorts." + language) if header_file_usage else (c + "_" + submissionID + "." + language)
 
         # Checks if the Submission already has a directory and if not, makes one. Otherwise, delete the old one and remake it
-        submissionPath = mainCodeDirectory + "/Submission_" + s
-        if not os.path.isdir(submissionPath):
-            FrankenWeb.Log_Time("UPDATE-*-\tNo Submission directory Found, Making new one", dt.now(tz))
-            os.mkdir(submissionPath)
-        else:
-            FrankenWeb.Log_Time("UPDATE-*-\tSubmission Directory detected, remaking it", dt.now(tz))
-            shutil.rmtree(submissionPath)
-            os.mkdir(submissionPath)
+        # submissionPath = mainCodeDirectory + "/Submission_" + submissionID
+
+
+
+        # if not os.path.isdir(submissionPath):
+        #     FrankenWeb.Log_Time("UPDATE-*-\tNo Submission directory Found, Making new one", dt.now(tz))
+        #     os.mkdir(submissionPath)
+        # else:
+        #     FrankenWeb.Log_Time("UPDATE-*-\tSubmission Directory detected, remaking it", dt.now(tz))
+        #     shutil.rmtree(submissionPath)
+        #     os.mkdir(submissionPath)
 
         # TODO-MultiCompiler This is what needs to be modified so that we can take in more than 1 compiler
-        User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["code"])
-        if User_Code_Exists:
-            Create_Makefile(submissionPath, codeFile)
-            if header_file_usage:
-                Copy_Header_Files(submissionPath)
-            Add_Downloaded_Path_To_File(submissionPath)
-        else:
-            shutil.rmtree(submissionPath)
+        # User_Code_Exists = Create_User_Code(submissionPath, codeFile, submission["code"])
+        # if User_Code_Exists:
+        #     Create_Makefile(submissionPath, codeFile)
+        #     if header_file_usage:
+        #         Copy_Header_Files(submissionPath)
+        #     Add_Downloaded_Path_To_File(submissionPath)
+        # else:
+        #     shutil.rmtree(submissionPath)
 
     return
 
