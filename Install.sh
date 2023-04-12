@@ -36,7 +36,7 @@ chmod +x Draculog.py
 
 # Draculog instructions to create specific folders and file structures
 python3 Draculog.py bp
-mkdir Source
+[ -d "Source" ] || mkdir Source
 python3 Draculog.py bc
 
 

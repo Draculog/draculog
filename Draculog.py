@@ -17,7 +17,7 @@ class GlobalValues:
 
     # Variables used for special execution
     testing = True  # Testing Execution
-    dummy = False  # Dummy Data creation
+    dummy = True  # Dummy Data creation
     verbose = True
     verboseCode = False  # For whether student code speaks
     log = True
@@ -60,7 +60,8 @@ class GlobalValues:
     Header_File_Str = "header.h"
 
     # String Version of File names (used as control variables)
-    User_Code_Directory_Name = "Downloaded_Code"
+    #User_Code_Directory_Name = "Downloaded_Code"
+    User_Code_Directory_Name = "Source"
     Downloading_Code_Str = "Downloading_Code.txt"
     Newly_Downloaded_Code_Str = "Newly_Downloaded_Code.txt"
     Executing_Code_Str = "Executing_Code.txt"

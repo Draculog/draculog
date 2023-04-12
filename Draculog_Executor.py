@@ -138,7 +138,8 @@ def Get_Carbon(energyUsed):
 ### Gathering User's Paths Functions
 # Gathers all User's Code paths in Newly Downloaded Code file, and returns it as a list (global list)
 def Compile_List_Of_Users():
-    global Downloaded_Code_List
+    global Downloaded_Code_List 
+    print("Length of Downloaded_Code_List " + str(len(Downloaded_Code_List)))
     if os.path.isfile(Globe.Newly_Downloaded_Code_Str):
         with open(Globe.Newly_Downloaded_Code_Str, "r") as DLCode:
             for line in DLCode:
@@ -147,6 +148,7 @@ def Compile_List_Of_Users():
         DLCode.close()
     # If there is no downloaded code file, return none for error control
     else:
+        print("Here 3: " + Globe.Newly_Downloaded_Code_Str)
         FrankenWeb.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
         return False
 
@@ -207,6 +209,10 @@ JSON (Resultant Obj from execution for each submission) = {
 def Compile_Headed_Data(submission_id, status, resultsString, output):
     # Compile Results String (String)
     # Compile Enum (Int)
+
+    us = '_'
+    if not us in submission_id:
+      submission_id = us + submission_id
 
     result_obj = {
         "submissionId": submission_id.split('_')[1],
@@ -616,10 +622,11 @@ def main():
     if os.path.isfile(Globe.Downloading_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
         errorStr = "Downloading" if os.path.isfile(Globe.Downloading_Code_Str) else "Uploading"
         print("Wait: Draculog is currently " + errorStr + " code. . . . .")
-        os.remove(Globe.Executing_Code_Str)
+        os.remove("Here1: " + Globe.Executing_Code_Str)
         sys.exit(2)
     if os.path.isfile(Globe.Executing_Code_Str):
         print("Wait: Draculog is currently still Executing code. . . . .")
+        print("Here2: " + Globe.Executing_Code_Str)
         os.remove(Globe.Executing_Code_Str)
         sys.exit(2)
 
