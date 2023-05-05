@@ -11,7 +11,7 @@ import os
 import shutil
 import logging
 import subprocess
-import Draculog_Executor as de
+import Draculog_ModularExec as de
 from collections import OrderedDict
 
 class ParamSet:
@@ -105,4 +105,4 @@ class DraculogSort:
  
 if __name__ == "__main__":
   ds = DraculogSort()
-  ds.buildCode("Source/test238")
+  ds.buildCode("Source/test_238")

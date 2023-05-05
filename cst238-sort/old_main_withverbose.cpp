@@ -11,7 +11,7 @@
 #include <fstream>
 #include <time.h>
 #include <string.h>
-#include "header.h"
+#include "mysorts.h"
 using namespace std;
 
 // Function prototypes

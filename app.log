@@ -1,6 +1,4 @@
-2023-04-12 00:59:56,235 - DEBUG - copying base files from cst238 to Source/test238
-2023-04-12 00:59:56,236 - DEBUG -   copying successful
-2023-04-12 00:59:56,236 - DEBUG - starting build process
-2023-04-12 00:59:56,240 - ERROR - failed to compile Source/test238: make: *** No rule to make target 'header.h', needed by 'deps'.  Stop.
-
-2023-04-12 00:59:56,240 - DEBUG - starting build process
+2023-05-05 05:05:23,253 - DEBUG - copying base files from cst238-sort to Source/test_238
+2023-05-05 05:05:23,254 - DEBUG -   copying successful
+2023-05-05 05:05:23,254 - DEBUG - starting build process
+2023-05-05 05:05:23,832 - DEBUG - ending build process

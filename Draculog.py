@@ -53,11 +53,11 @@ class GlobalValues:
     }
 
     # Special Unifying Strings
-    Executable_Str = "code"
+    Executable_Str = "sort"
     Results_Json_Str = "Results.json"
     Header_File_Location = "Headers"
     Main_Header_File_Str = "main.cpp"
-    Header_File_Str = "header.h"
+    Header_File_Str = "mysorts.h"
 
     # String Version of File names (used as control variables)
     #User_Code_Directory_Name = "Downloaded_Code"
