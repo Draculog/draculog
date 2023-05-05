@@ -85,6 +85,7 @@ Sensors_List = {
 }
 
 Sensors_Threads = []
+execute_module = Draculog_Sort()
 
 # Control Variables
 testing = Globe.testing
@@ -364,27 +365,9 @@ def Measure_Headed_User_Code():
                 dt.now(tz), OnlyPrint=True)
             status = 5
             continue
-        # else:
-        #     Results_File = open(User_Path + "/Results.json", "w+")
 
-        # Find the MakeFile and execute it (Build Source Code), else return that the status is false/failed
-        if not os.path.isfile(User_Path + "/Makefile"):
-            FrankenWeb.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
-            status = 5
-            # (submission_id, status, resultsString, output)
-            Compile_To_Json(Compile_Headed_Data(User_Path_Split[1], status,
-                                                "No Makefile found, likely Downloader didn't find any source code",
-                                                "Failed-Draculog"), User_Path)
-            continue
-        else:
-            # Run the makefile, if it fails save that status (errors in their code)
-            # built = os.system("cd " + User_Path + "&& make")
-            built = subprocess.run("cd " + User_Path + " && make", shell=True, capture_output=True, text=True)
-            if built.returncode != 0:
-                status = 1
-                Compile_To_Json(Compile_Headed_Data(User_Path_Split[1], status, built.stderr, "Failed-Compilation"), User_Path)
-                continue
-
+        # use the executor to build
+        executor_module.buildCode(User_Path
         '''
             Data Obj = {
                 algorithmName: "",
@@ -403,7 +386,8 @@ def Measure_Headed_User_Code():
         '''
         resultsString = "Successful Sorting"
         # For Each Submission, Loop for each algorithm in algorithms
-        for algo in algorithms:
+        params = executor_module.getParamList()
+        for p in params:
             if testing:
                 print("Running " + User_Path + "'s Code's with algorithm " + algo)
             algo_data = {
@@ -509,78 +493,6 @@ def Measure_Headed_User_Code():
     return
 
 
-# Loops through User Path list (Downloaded Code List) and executes their code
-def Measure_Headless_User_Code():
-    global Sensors_Threads
-    for User_Path in Downloaded_Code_List:
-        # Clears Sensors_Threads list to prevent memory leak
-        Sensors_Threads.clear()
-
-        # Initializes/Sets Control Variables
-        SensorGlobe.continueLogging = True
-        status = True
-
-        # Check for any updates to the Newly Downloaded Code File, if yes then update the list
-        if Check_For_Updates():
-            Compile_List_Of_Users()
-
-        # Find the MakeFile and execute it (Build Source Code), else return that the status is false/failed
-        if not os.path.isfile(User_Path + "/Makefile"):
-            FrankenWeb.Log_Time("ERROR-*-\tNo Makefile found here, skipping - " + User_Path, dt.now(tz), OnlyPrint=True)
-            continue
-        else:
-            # Run the makefile, if it fails save that status (errors in their code)
-            built = os.system("cd " + User_Path + "&& make")
-            if built != 0:
-                status = False
-
-        # Checks to see if we've already run their code
-        if os.path.isfile(User_Path + "/Results.json"):
-            FrankenWeb.Log_Time("ERROR-*-\tUser's Submission @ " + User_Path + " already contains results, skipping",
-                                dt.now(tz), OnlyPrint=True)
-            continue
-        else:
-            Results_File = open(User_Path + "/Results.json", "w+")
-
-        # Upper Dir is 0, Submission Dir is 1
-        User_Path_Split = User_Path.split('/')
-
-        # TODO-MultiCompiler This is another thing that would be modified for multi usage
-        # Build Command list
-        commands = ["./" + User_Path + "/" + executable]
-
-        # Build sensor threads
-        Build_Sensor_Threads()
-
-        # Allow sensors to run
-        SensorGlobe.continueLogging = True
-
-        # Start Sensor Threads
-        Start_Sensor_Threads()
-
-        # Run Downloaded Code
-        ## TODO This needs to be done differently (loop)
-        startTime, endTime, status, output = Execute_User_Code(status, commands)
-
-        # Wait for all sensors to finish
-        Wait_For_Sensor_Threads()
-
-        # Gather all sensor data
-        measurements = Gather_Sensor_Data()
-
-        # Compile it all together into one singular JSON
-        result_json = Compile_Headless_Data(User_Path_Split[0], User_Path_Split[1], measurements, startTime, endTime,
-                                            status)
-
-        # Save it as a file in user path
-        json.dump(result_json, Results_File)
-        Results_File.close()
-
-        # Save New User Path
-        Add_Executed_Path_To_File(User_Path, round(time.time()))
-
-    return
-
 
 ### Cleaning Up After Execution Functions
 # Moves all Files in Old directory (Downloaded_Code/UserId/SubmissionId)
@@ -646,7 +558,7 @@ def main():
         Measure_Headless_User_Code()
 
     # Move all code from old directory into new directory
-    Clean_Up()
+    # Clean_Up()
 
     # Delete the control Text File
     control_file.close()

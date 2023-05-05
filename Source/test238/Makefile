@@ -9,5 +9,5 @@ all: main
 deps: $(HEADER)
 
 main: deps $(MAIN_HEADER)
-	$(COM) $(FLAGS) $(MAIN_HEADER) $(HEADER) $(STUDENT_CODE) -o code
+	$(COM) $(FLAGS) $(MAIN_HEADER) $(HEADER) $(STUDENT_CODE) -o main
 
