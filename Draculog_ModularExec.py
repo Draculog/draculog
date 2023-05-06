@@ -368,7 +368,7 @@ def Measure_Headed_User_Code():
             continue
 
         # use the executor to build - this is a callback!
-        executor_module.buildCode(User_Path)
+        execute_module.buildCode(User_Path)
         '''
             Data Obj = {
                 algorithmName: "",
@@ -387,96 +387,20 @@ def Measure_Headed_User_Code():
         '''
         resultsString = "Successful Sorting"
         # For Each Submission, Loop for each algorithm in algorithms
-        params = executor_module.getParamList()
-        for p in params:
-            if testing:
-                print("Running " + User_Path + "'s Code's with algorithm " + algo)
-            algo_data = {
-                "algorithmName": Globe.algorithmMap[algo],
-                "sizeRun": []
-            }
+        for algorithm in execute_module.getAlgorithmList():
+
             # For Each Submission of this algorithm, loop from n to m size
-            for size in range(minSize, (maxSize + step), step):
-                if testing:
-                    print("Running " + algo + " at size " + str(size))
-                Sensors_Threads.clear()
+            #for size in range(minSize, (maxSize + step), step):
 
-                # Initialize Sensor Control Variables
-                SensorGlobe.continueLogging = True
+#            startTime, endTime, status, output = Execute_User_Code(status, commands)
+            startTime = 0
+            endTime = 0
+            status = ""
+            output = ""
+            if testing:
+                print(output)
 
-                # TODO-MultiCompiler This is another thing that would be modified for multi usage
-                ## TODO Basically, to make it multi-compiler, change the executable file (the ./ + text)
-                ## TODO to be a variable pulled from the user's code, maybe even smth saved in the "Newly_DL'ed" file.
-                ## TODO then just pass that into this as the variable. Ie C++ would be ["./", executable, ...]
-                ## TODO and python would be ["python3", executable, ...]
-                # Build Command list
-                commands = "./" + User_Path + "/" + executable + " " + str(size) + " " + algo + " " + str(Globe.verboseCode).lower()
-
-                # Build sensor threads
-                # Build_Sensor_Threads()
-                for SensorStr in Sensors_List:
-                    Sensors_List[SensorStr].Build_Logger()
-
-                # TODO EXIT CODES:
-                ## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted; 4 -> Timeout Error; 5 -> Draculog Failure
-
-                # Allow sensors to run
-                SensorGlobe.continueLogging = True
-
-                # Start Sensor Threads
-                # Start_Sensor_Threads()
-                ## Since we're only measuring Energy, just call Start_Logging
-                for SensorStr in Sensors_List:
-                    Sensors_List[SensorStr].Start_Logging()
-
-                # Run Downloaded Code
-                startTime, endTime, status, output = Execute_User_Code(status, commands)
-                if testing:
-                    print(output)
-
-                # Finishes Execution of All sensors (PyRAPL)
-                # Wait for all sensors to finish
-                # Wait_For_Sensor_Threads()
-                for SensorStr in Sensors_List:
-                    Sensors_List[SensorStr].End_Logging()
-
-                # # Gather all sensor data
-                # measurements = Gather_Sensor_Data() # Gets a list of sensors and data points
-
-                # Check for Status errors from execution
-                # if output.stdout.split()
-                if status != 0:
-                    if status == 2:
-                        FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + User_Path, dt.now(tz),
-                                            OnlyPrint=True)
-                        resultsString = output.stderr
-                        break
-                    if status == 4:
-                        FrankenWeb.Log_Time("ERROR-*-\tTimeout Error - " + User_Path, dt.now(tz),
-                                            OnlyPrint=True)
-                        resultsString = "Timeout error, code ran for longer than " + str(timeoutSeconds)
-                        break
-                outputString = output.stdout.split()
-                if outputString[outputString.index("sorted:") + 1] != "true":
-                    status = 3
-                    FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + User_Path, dt.now(tz),
-                                        OnlyPrint=True)
-                    resultsString = "Numbers failed to sort, please check your algorithm(s)"
-                    break
-
-                # Gather all needed Data (Energy and Delta Time)
-                sizeRun_data = {
-                    "size": size,
-                    "seconds": endTime - startTime,
-                    "microjoules": Sensors_List["PyRAPL"].Get_Data(),
-                    "gramsco2": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
-                }
-                if testing:
-                    print(sizeRun_data)
-                # combined_measurements = Combine_Data(measurements) # Returns a dictionary of those data points organized
-
-                algo_data["sizeRun"].append(sizeRun_data)
-            algorithms_data.append(algo_data)
+        algorithms_data.append(algo_data)
 
         # # Compile it all together into one singular JSON #TODO fix this function
         # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
@@ -493,6 +417,68 @@ def Measure_Headed_User_Code():
 
     return
 
+
+def CompileResults(user_path, size, start_time, end_time, status, output):
+    # Finishes Execution of All sensors (PyRAPL)
+    # Wait for all sensors to finish
+    # Wait_For_Sensor_Threads()
+    for SensorStr in Sensors_List:
+        Sensors_List[SensorStr].End_Logging()
+    # # Gather all sensor data
+    # measurements = Gather_Sensor_Data() # Gets a list of sensors and data points
+    # Check for Status errors from execution
+    # if output.stdout.split()
+    if status != 0:
+        if status == 2:
+            FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + user_path, dt.now(tz),
+                                OnlyPrint=True)
+            resultsString = output.stderr
+            # break
+        if status == 4:
+            FrankenWeb.Log_Time("ERROR-*-\tTimeout Error - " + user_path, dt.now(tz),
+                                OnlyPrint=True)
+            resultsString = "Timeout error, code ran for longer than " + str(timeoutSeconds)
+            # break
+    outputString = output.stdout.split()
+    if outputString[outputString.index("sorted:") + 1] != "true":
+        status = 3
+        FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + user_path, dt.now(tz),
+                            OnlyPrint=True)
+        resultsString = "Numbers failed to sort, please check your algorithm(s)"
+        # break
+    # Gather all needed Data (Energy and Delta Time)
+    sizeRun_data = {
+        "size": size,
+        "seconds": end_time - start_time,
+        "microjoules": Sensors_List["PyRAPL"].Get_Data(),
+        "gramsco2": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
+    }
+    if testing:
+        print(sizeRun_data)
+    # combined_measurements = Combine_Data(measurements) # Returns a dictionary of those data points organized
+    algo_data["sizeRun"].append(sizeRun_data)
+    # return resultsString, s#tatus
+
+
+def StartSensors(Sensors_Threads):
+    Sensors_Threads.clear()
+    # Initialize Sensor Control Variables
+    SensorGlobe.continueLogging = True
+    # Build sensor threads
+    # Build_Sensor_Threads()
+    for SensorStr in Sensors_List:
+        Sensors_List[SensorStr].Build_Logger()
+    # TODO EXIT CODES:
+    ## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted; 4 -> Timeout Error; 5 -> Draculog Failure
+    # Allow sensors to run
+    SensorGlobe.continueLogging = True
+    # Start Sensor Threads
+    # Start_Sensor_Threads()
+    ## Since we're only measuring Energy, just call Start_Logging
+    for SensorStr in Sensors_List:
+        Sensors_List[SensorStr].Start_Logging()
+    # Run Downloaded Code
+    return
 
 
 ### Cleaning Up After Execution Functions
