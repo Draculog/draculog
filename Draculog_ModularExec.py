@@ -62,7 +62,7 @@ import json
 from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
-from Sensors.Sensor import GlobalSensorValues as SensorGlobe
+#from Sensors.Sensor import GlobalSensorValues as SensorGlobe
 # Sensors
 # TODO-Modularity To make Draculog more modular, I need to make this dynamic and not static
 from Sensors import Sensor_Dummy, Sensor_PyRAPL
@@ -92,6 +92,7 @@ class DraculogRunner:
         self.verbose = False
         self.log = Globe.log
         self.control_file = None
+        self.continueLogging = False
 
         # I have no idea how to set this... JBG
         self.New_Downloaded_Code_File = "Newly_Downloaded_Code.txt"
@@ -135,7 +136,8 @@ class DraculogRunner:
         return gramsCO2
 
     ### Gathering User's Paths Functions
-    # Gathers all User's Code paths in Newly Downloaded Code file, and returns it as a list (global list)
+    # Gathers all User's Code paths in Newly Downloaded Code file, and adds to
+    # the list of downloaded code
     def Compile_List_Of_Users(self):
         print("Length of Downloaded_Code_List " + str(len(self.Downloaded_Code_List)))
         if os.path.isfile(self.New_Downloaded_Code_File):
@@ -247,11 +249,10 @@ class DraculogRunner:
 
     # Adds Str User Path of Executed code to a separate file
     def Add_Executed_Path_To_File(self, UserPath, TimeStamp):
-        global Executed_Code_List
         if self.Executed_File is None:
             self.Executed_File = open(self.Newly_Executed_Code_File, "a+")
         self.Executed_File.write(UserPath + "_Executed-" + str(TimeStamp) + "\n")
-        Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
+        self.Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
         return
 
     def Execute_User_Code(self, commands, timeout, status):
@@ -276,11 +277,10 @@ class DraculogRunner:
             status = 2
 
         end_time = time.time()
-        SensorGlobe.continueLogging = False
+        self.continueLogging = False
         return start_time, end_time, status, output
 
     def measure_code(self):
-        global Sensors_Threads
 
         # Loop for Each Submission
         for User_Path in self.Downloaded_Code_List:
@@ -387,10 +387,10 @@ class DraculogRunner:
         # algo_data["sizeRun"].append(size_run_data)
         # return resultsString, s#tatus
 
-    def StartSensors(self, Sensors_Threads):
-        Sensors_Threads.clear()
+    def StartSensors(self):
+        self.Sensors_Threads.clear()
         # Initialize Sensor Control Variables
-        SensorGlobe.continueLogging = True
+        self.continueLogging = True
         # Build sensor threads
         # Build_Sensor_Threads()
         for SensorStr in self.Sensors_List:
@@ -398,7 +398,7 @@ class DraculogRunner:
         # TODO EXIT CODES:
         ## TODO -- 0 - > Success; 1 -> Compiler Error; 2 -> Runtime Error; 3 -> Not Sorted; 4 -> Timeout Error; 5 -> Draculog Failure
         # Allow sensors to run
-        SensorGlobe.continueLogging = True
+        self.continueLogging = True
         # Start Sensor Threads
         # Start_Sensor_Threads()
         ## Since we're only measuring Energy, just call Start_Logging
@@ -411,7 +411,6 @@ class DraculogRunner:
     # Moves all Files in Old directory (Downloaded_Code/UserId/SubmissionId)
     # Into new -> (Downloaded_Code/UserId/SubmissionId_Executed-TIMESTAMP)
     def Clean_Up(self):
-        global Executed_Code_List
 
         # print("=============== Length of ExCodeList is " + str(len(Executed_Code_List)) + " vs Len of DLCode " + str(len(Downloaded_Code_List)))
         # print(Executed_Code_List)
@@ -420,13 +419,14 @@ class DraculogRunner:
         self.FrankenWeb.Log_Time("UPDATE-*-\tCleaning up already run directories now", dt.now(tz))
 
         # Moves all Files in old directory to new directory
-        for index in range(0, len(Executed_Code_List)):
+        for index in range(0, len(self.Executed_Code_List)):
             allFilesInDir = os.listdir(self.Downloaded_Code_List[index])
-            if os.path.isdir(Executed_Code_List[index]):
-                shutil.rmtree(Executed_Code_List[index])
-            os.mkdir(Executed_Code_List[index])
+            if os.path.isdir(self.Executed_Code_List[index]):
+                shutil.rmtree(self.Executed_Code_List[index])
+            os.mkdir(self.Executed_Code_List[index])
             for file in allFilesInDir:
-                os.rename(self.Downloaded_Code_List[index] + "/" + file, Executed_Code_List[index] + "/" + file)
+                os.rename(self.Downloaded_Code_List[index] + "/" + file,
+                          self.Executed_Code_List[index] + "/" + file)
 
             # Delete Old User Path
             shutil.rmtree(self.Downloaded_Code_List[index])
@@ -441,7 +441,6 @@ class DraculogRunner:
         self.FrankenWeb.Log_Time("ES##-\tExecution Started", dt.now(tz))
 
         # Checks to see if we are already downloading, executing, or uploading code
-        global control_file
         if os.path.isfile(self.Downloading_Code_File) or os.path.isfile(self.Uploading_Code_File):
             errorStr = "Downloading" if os.path.isfile(self.Downloading_Code_File) else "Uploading"
             print("Wait: Draculog is currently " + errorStr + " code. . . . .")
