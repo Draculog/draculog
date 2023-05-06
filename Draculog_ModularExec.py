@@ -96,11 +96,16 @@ class DraculogRunner:
         self.control_file = None
 
         # I have no idea how to set this... JBG
-        self.Newly_Downloaded_Code_Str = ""
+        self.New_Downloaded_Code_File = "Newly_Downloaded_Code.txt"
         # Variables used throughout the program
         self.Downloaded_Code_List = []
         self.Executed_Code_List = []
-
+        self.User_Code_Directory_Name = "Source"
+        self.Downloading_Code_File = "Downloading_Code.txt"
+        self.Executing_Code_File = "Executing_Code.txt"
+        self.Newly_Executed_Code_File = "Newly_Executed_Code.txt"
+        self.Uploading_Code_File = "Uploading_Code.txt"
+        self.Newly_Uploaded_Code_File = "Newly_Uploaded_Code.txt"
         # List of Executed Code
         if not os.path.isfile(Globe.Newly_Executed_Code_str):
             self.Executed_File = open(Globe.Newly_Executed_Code_str, "w+")
@@ -134,15 +139,15 @@ class DraculogRunner:
     # Gathers all User's Code paths in Newly Downloaded Code file, and returns it as a list (global list)
     def Compile_List_Of_Users(self):
         print("Length of Downloaded_Code_List " + str(len(self.Downloaded_Code_List)))
-        if os.path.isfile(self.Newly_Downloaded_Code_Str):
-            with open(self.Newly_Downloaded_Code_Str, "r") as DLCode:
+        if os.path.isfile(self.New_Downloaded_Code_File):
+            with open(self.New_Downloaded_Code_File, "r") as DLCode:
                 for line in DLCode:
                     if line.replace("\n", "") not in self.Downloaded_Code_List:
                         self.Downloaded_Code_List.append(line.replace("\n", ""))
             DLCode.close()
         # If there is no downloaded code file, return none for error control
         else:
-            print("Here 3: " + self.Newly_Downloaded_Code_Str)
+            print("Here 3: " + self.New_Downloaded_Code_File)
             self.FrankenWeb.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
             return False
 
@@ -151,8 +156,8 @@ class DraculogRunner:
     # Return True/False if there have been any changes in the Newly Downloaded Code File
     def Check_For_Updates(self):
         temp_Downloaded_Code_List = []
-        if os.path.isfile(self.Newly_Downloaded_Code_Str):
-            with open(self.Newly_Downloaded_Code_Str, "r") as DLCode:
+        if os.path.isfile(self.New_Downloaded_Code_File):
+            with open(self.New_Downloaded_Code_File, "r") as DLCode:
                 temp_Downloaded_Code_List.append(DLCode.readline())
         return temp_Downloaded_Code_List != self.Downloaded_Code_List
 
