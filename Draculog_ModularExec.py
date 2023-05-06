@@ -107,10 +107,10 @@ class DraculogRunner:
         self.Uploading_Code_File = "Uploading_Code.txt"
         self.Newly_Uploaded_Code_File = "Newly_Uploaded_Code.txt"
         # List of Executed Code
-        if not os.path.isfile(Globe.Newly_Executed_Code_str):
-            self.Executed_File = open(Globe.Newly_Executed_Code_str, "w+")
+        if not os.path.isfile(self.Newly_Executed_Code_File):
+            self.Executed_File = open(self.Newly_Executed_Code_File, "w+")
         else:
-            self.Executed_File = open(Globe.Newly_Executed_Code_str, "a+")
+            self.Executed_File = open(self.Newly_Executed_Code_File, "a+")
 
     ### Carbon Calculations
     # New formula for carbon used: 238g of C02 per kWh
@@ -248,10 +248,10 @@ class DraculogRunner:
 
     # Adds Str User Path of Executed code to a separate file
     def Add_Executed_Path_To_File(self, UserPath, TimeStamp):
-        global Executed_File, Executed_Code_List
-        if Executed_File is None:
-            Executed_File = open(Globe.Newly_Executed_Code_str, "a+")
-        Executed_File.write(UserPath + "_Executed-" + str(TimeStamp) + "\n")
+        global Executed_Code_List
+        if self.Executed_File is None:
+            self.Executed_File = open(Globe.Newly_Executed_Code_str, "a+")
+        self.Executed_File.write(UserPath + "_Executed-" + str(TimeStamp) + "\n")
         Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
         return
 
