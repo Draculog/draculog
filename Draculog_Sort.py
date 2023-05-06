@@ -89,7 +89,7 @@ class DraculogSort:
                 commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, algorithm, size)
 
                 # run the code
-                start_time, end_time, status, output = self.drac.Execute_User_Code(commands)
+                start_time, end_time, status, output = self.drac.Execute_User_Code(commands, 0)
 
                 # shut down the sensors and store the results
                 size_run_data = self.drac.compile_results(self.CurrentUserDir,

@@ -255,7 +255,7 @@ class DraculogRunner:
         Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
         return
 
-    def Execute_User_Code(self, status, commands):
+    def Execute_User_Code(self, commands, status):
         output = None
         start_time = time.time()
         if status == 0 or status:
