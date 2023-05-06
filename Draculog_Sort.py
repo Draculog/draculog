@@ -6,14 +6,14 @@
 # 2. A method that will return a list of parameter combinations to run
 # 3. A method that will clean up the code
 
-import sys
+import logging
 import os
 import shutil
-import logging
 import subprocess
 import time
-import Draculog_ModularExec as de
 from collections import OrderedDict
+
+from Draculog_ModularExec import DraculogRunner
 
 
 class DraculogSort:
@@ -29,6 +29,7 @@ class DraculogSort:
         self.AlgorithmList = ("bubble", "insertion", "fastinsertion", "selection", "heap", "merge", "quick")
         self.SizeList = range(10000, 50001, 10000)
         self.TimeoutSeconds = 1000
+        self.drac = DraculogRunner(self)
 
     # will build the code in the given directory
     # after copying the necessary files
@@ -58,8 +59,9 @@ class DraculogSort:
         built = subprocess.run("cd " + userDirectory + " && make", shell=True, capture_output=True, text=True)
         if built.returncode != 0:
             status = 1
-            de.Compile_To_Json(de.Compile_Headed_Data(userDirectory, status, built.stderr, "Failed-Compilation"),
-                               userDirectory)
+            self.drac.Compile_To_Json(
+                self.drac.Compile_Headed_Data(userDirectory, status, built.stderr, "Failed-Compilation"),
+                userDirectory)
             logging.error("failed to compile " + userDirectory + ": " + built.stderr)
         logging.debug("ending build process")
 
@@ -81,36 +83,40 @@ class DraculogSort:
         try:
             for size in self.SizeList:
                 # start the sensors
-                de.StartSensors(de.Sensors_Threads)
+                self.drac.StartSensors(self.drac.Sensors_Threads)
 
                 # construct the command
                 commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, algorithm, size)
 
                 # run the code
-                start_time, end_time, status, output = de.Execute_User_Code(commands)
+                start_time, end_time, status, output = self.drac.Execute_User_Code(commands)
 
                 # shut down the sensors and store the results
-                size_run_data = de.compile_results(self.CurrentUserDir,
-                                                   size,
-                                                   start_time,
-                                                   end_time,
-                                                   status,
-                                                   output)
+                size_run_data = self.drac.compile_results(self.CurrentUserDir,
+                                                          size,
+                                                          start_time,
+                                                          end_time,
+                                                          status,
+                                                          output)
                 algo_data["sizeRun"].append(size_run_data)
 
         except subprocess.TimeoutExpired:
-            de.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
+            self.drac.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
             status = 4
 
         if output.returncode != 0:
-            de.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
+            self.drac.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
             status = 2
 
         end_time = time.time()
-        de.SensorGlobe.continueLogging = False
+        self.drac.SensorGlobe.continueLogging = False
         return algo_data
+
+    def run(self):
+        self.drac.run()
 
 
 if __name__ == "__main__":
     ds = DraculogSort()
-    ds.buildCode("Source/test_238")
+    ds.run()
+#    ds.buildCode("Source/test_238")

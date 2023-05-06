@@ -59,7 +59,6 @@ import shutil
 import json
 
 # For Controlling the System
-from Draculog_Sort import DraculogSort as dsort
 from Draculog import GlobalValues as Globe
 from Draculog import SharedDraculogFunctions
 
@@ -67,8 +66,6 @@ from Sensors.Sensor import GlobalSensorValues as SensorGlobe
 # Sensors
 # TODO-Modularity To make Draculog more modular, I need to make this dynamic and not static
 from Sensors import Sensor_Dummy, Sensor_PyRAPL
-
-FrankenWeb = SharedDraculogFunctions()
 
 # TimeZone creation for logging
 tz = pytz.timezone(Globe.tzStr)
@@ -88,8 +85,9 @@ class DraculogRunner:
 
         self.Sensors_Threads = []
         self.execute_module = executor
+        self.FrankenWeb = SharedDraculogFunctions()
 
-# Control Variables
+        # Control Variables
         self.testing = Globe.testing
         self.verbose = Globe.verbose
         self.log = Globe.log
@@ -109,11 +107,11 @@ class DraculogRunner:
         else:
             self.Executed_File = open(Globe.Newly_Executed_Code_str, "a+")
 
-
     ### Carbon Calculations
     # New formula for carbon used: 238g of C02 per kWh
     # Formula for Carbon used from electricity is 884.2 lbs of CO2 / 1 MegaWatt Hour
     # As per this EPA.gov article: https://www.epa.gov/energy/greenhouse-gases-equivalencies-calculator-calculations-and-references
+
     def Get_Carbon(self, energyUsed):
         # Input in microjoules
         # Output in grams of CO2
@@ -132,7 +130,6 @@ class DraculogRunner:
 
         return gramsCO2
 
-
     ### Gathering User's Paths Functions
     # Gathers all User's Code paths in Newly Downloaded Code file, and returns it as a list (global list)
     def Compile_List_Of_Users(self):
@@ -146,11 +143,10 @@ class DraculogRunner:
         # If there is no downloaded code file, return none for error control
         else:
             print("Here 3: " + self.Newly_Downloaded_Code_Str)
-            FrankenWeb.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
+            self.FrankenWeb.Log_Time("FATAL-*-\tNo Downloaded Code List Found", dt.now(tz))
             return False
 
         return True
-
 
     # Return True/False if there have been any changes in the Newly Downloaded Code File
     def Check_For_Updates(self):
@@ -159,7 +155,6 @@ class DraculogRunner:
             with open(self.Newly_Downloaded_Code_Str, "r") as DLCode:
                 temp_Downloaded_Code_List.append(DLCode.readline())
         return temp_Downloaded_Code_List != self.Downloaded_Code_List
-
 
     ### Executing User Code Functions
     # TODO-Modularity Change this to be more modular, as it will only take static numbers (ie only 4 sensors exist, and we
@@ -178,7 +173,6 @@ class DraculogRunner:
                 continue
 
         return combined_data
-
 
     """
     Results JSON Looks Like:
@@ -202,14 +196,13 @@ class DraculogRunner:
     }
     """
 
-
     def Compile_Headed_Data(self, submission_id, status, resultsString, output):
         # Compile Results String (String)
         # Compile Enum (Int)
 
         us = '_'
         if not us in submission_id:
-          submission_id = us + submission_id
+            submission_id = us + submission_id
 
         result_obj = {
             "submissionId": submission_id.split('_')[1],
@@ -221,8 +214,7 @@ class DraculogRunner:
             print(result_obj)
         return result_obj
 
-
-# Compiles Given Data into a Single JSON Object
+    # Compiles Given Data into a Single JSON Object
     def Compile_Headless_Data(self, submission_id, sensor_data, start_time, end_time, status):
         combined_sensor_data = self.Combine_Data(sensor_data)
 
@@ -258,63 +250,6 @@ class DraculogRunner:
         Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
         return
 
-
-# ## TODO only used for non-headed file execution
-# def Build_Sensor_Threads():
-#     global Sensors_Threads, Sensor_Index
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tBuilding all sensors", time.time())
-#     Sensors_Threads.clear()
-#     for sensor in Sensors_List:
-#         temp_sensor = Sensors_List[sensor]
-#         # This section is for sensors who don't need to be threaded
-#         if not temp_sensor.threadMe:
-#             temp_sensor.Build_Logger()
-#             Sensors_Threads.append(temp_sensor)
-#             continue
-#         t = temp_sensor.Build_Logger(str(Sensor_Index), function=temp_sensor.Log)
-#         Sensors_Threads.append(t)
-#     Sensor_Index += 1
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished building all sensors", time.time())
-#     return
-#
-#
-# ## TODO only used for non-headed file execution
-# ## TODO Fix sensor list bug, since can't check if a obj is in a dict like this
-# def Start_Sensor_Threads():
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
-#     for t in Sensors_Threads:
-#         # if t in Sensors_List:
-#         #     t.Start_Logging()
-#         #     continue
-#         t.start()
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished starting all sensors", time.time())
-#     return
-#
-#
-# ## TODO only used for non-headed file execution
-# ## TODO Fix sensor list bug, since can't check if a obj is in a dict like this
-# def Wait_For_Sensor_Threads():
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tWaiting for all sensors to finish", time.time())
-#     for t in Sensors_Threads:
-#         if t in Sensors_List:
-#             t.End_Logging()
-#             continue
-#         t.join()
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tFinished running all sensors", time.time())
-#     return
-#
-#
-# ## TODO only used for non-headed file execution
-# def Gather_Sensor_Data():
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tGathering all sensor data", time.time())
-#     measurements = []
-#     for sensor in Sensors_List:
-#         temp_sensor = Sensors_List[sensor]
-#         measurements.append([temp_sensor, temp_sensor.Get_Data()])
-#     FrankenWeb.Log_Time("UPDATE-SENSORS-*-\tStarting all sensors", time.time())
-#     return measurements
-
-
     def Execute_User_Code(self, status, commands):
         output = None
         start_time = time.time()
@@ -329,17 +264,16 @@ class DraculogRunner:
                                         text=True)
                 # , stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) # Old Flags
             except subprocess.TimeoutExpired:
-                FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
+                self.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
                 status = 4
 
         if output.returncode != 0:
-            FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
+            self.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
             status = 2
 
         end_time = time.time()
         SensorGlobe.continueLogging = False
         return start_time, end_time, status, output
-
 
     def measure_code(self):
         global Sensors_Threads
@@ -360,7 +294,7 @@ class DraculogRunner:
 
             # Checks to see if we've already run their code
             if os.path.isfile(User_Path + "/Results.json"):
-                FrankenWeb.Log_Time(
+                self.FrankenWeb.Log_Time(
                     "ERROR-*-\tUser's Submission @ " + User_Path + " already contains results, skipping",
                     dt.now(tz), OnlyPrint=True)
                 status = 5
@@ -405,7 +339,6 @@ class DraculogRunner:
 
         return
 
-
     def compile_results(self, user_path, size, start_time, end_time, status, output):
         # Finishes Execution of All sensors (PyRAPL)
         # Wait for all sensors to finish
@@ -419,20 +352,20 @@ class DraculogRunner:
         results_string = ""
         if status != 0:
             if status == 2:
-                FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + user_path, dt.now(tz),
-                                    OnlyPrint=True)
+                self.FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + user_path, dt.now(tz),
+                                         OnlyPrint=True)
                 results_string = output.stderr
                 # break
             if status == 4:
-                FrankenWeb.Log_Time("ERROR-*-\tTimeout Error - " + user_path, dt.now(tz),
-                                    OnlyPrint=True)
+                self.FrankenWeb.Log_Time("ERROR-*-\tTimeout Error - " + user_path, dt.now(tz),
+                                         OnlyPrint=True)
                 results_string = "Timeout error, code ran for longer than " + str(self.timeoutSeconds)
                 # break
         results_string = output.stdout.split()
         if results_string[results_string.index("sorted:") + 1] != "true":
             status = 3
-            FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + user_path, dt.now(tz),
-                                OnlyPrint=True)
+            self.FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + user_path, dt.now(tz),
+                                     OnlyPrint=True)
             resultsString = "Numbers failed to sort, please check your algorithm(s)"
             # break
         # Gather all needed Data (Energy and Delta Time)
@@ -449,7 +382,6 @@ class DraculogRunner:
         # combined_measurements = Combine_Data(measurements) # Returns a dictionary of those data points organized
         # algo_data["sizeRun"].append(size_run_data)
         # return resultsString, s#tatus
-
 
     def StartSensors(self, Sensors_Threads):
         Sensors_Threads.clear()
@@ -471,7 +403,6 @@ class DraculogRunner:
         # Run Downloaded Code
         return
 
-
     ### Cleaning Up After Execution Functions
     # Moves all Files in Old directory (Downloaded_Code/UserId/SubmissionId)
     # Into new -> (Downloaded_Code/UserId/SubmissionId_Executed-TIMESTAMP)
@@ -482,7 +413,7 @@ class DraculogRunner:
         # print(Executed_Code_List)
         # print(Downloaded_Code_List)
 
-        FrankenWeb.Log_Time("UPDATE-*-\tCleaning up already run directories now", dt.now(tz))
+        self.FrankenWeb.Log_Time("UPDATE-*-\tCleaning up already run directories now", dt.now(tz))
 
         # Moves all Files in old directory to new directory
         for index in range(0, len(Executed_Code_List)):
@@ -501,48 +432,46 @@ class DraculogRunner:
 
         return
 
+    def run(self):
+        # Starting Log Statement
+        self.FrankenWeb.Log_Time("ES##-\tExecution Started", dt.now(tz))
 
-# ### Main Execution Build Section
-# def main():
-#     # Starting Log Statement
-#     FrankenWeb.Log_Time("ES##-\tExecution Started", dt.now(tz))
-#
-#     # Checks to see if we are already downloading, executing, or uploading code
-#     global control_file
-#     if os.path.isfile(Globe.Downloading_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
-#         errorStr = "Downloading" if os.path.isfile(Globe.Downloading_Code_Str) else "Uploading"
-#         print("Wait: Draculog is currently " + errorStr + " code. . . . .")
-#         os.remove("Here1: " + Globe.Executing_Code_Str)
-#         sys.exit(2)
-#     if os.path.isfile(Globe.Executing_Code_Str):
-#         print("Wait: Draculog is currently still Executing code. . . . .")
-#         print("Here2: " + Globe.Executing_Code_Str)
-#         os.remove(Globe.Executing_Code_Str)
-#         sys.exit(2)
-#
-#     # Make a control Text File
-#     control_file = open(Globe.Executing_Code_Str, "w")
-#
-#     # Do Execution Stuff
-#     # Find Newly Downloaded Code file (containing all new code to run)
-#     if not Compile_List_Of_Users():
-#         os.remove(Globe.Executing_Code_Str)
-#         sys.exit(1)
-#
-#     # Measures User Code
-#     measure_code()
-#
-#     # Move all code from old directory into new directory
-#     # Clean_Up()
-#
-#     # Delete the control Text File
-#     control_file.close()
-#     os.remove(Globe.Executing_Code_Str)
-#
-#     # Ending Log Statement
-#     FrankenWeb.Log_Time("EF##-\tExecution Finished", dt.now(tz))
-#
-#     return
+        # Checks to see if we are already downloading, executing, or uploading code
+        global control_file
+        if os.path.isfile(Globe.Downloading_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
+            errorStr = "Downloading" if os.path.isfile(Globe.Downloading_Code_Str) else "Uploading"
+            print("Wait: Draculog is currently " + errorStr + " code. . . . .")
+            os.remove("Here1: " + Globe.Executing_Code_Str)
+            sys.exit(2)
+        if os.path.isfile(Globe.Executing_Code_Str):
+            print("Wait: Draculog is currently still Executing code. . . . .")
+            print("Here2: " + Globe.Executing_Code_Str)
+            os.remove(Globe.Executing_Code_Str)
+            sys.exit(2)
+
+        # Make a control Text File
+        control_file = open(Globe.Executing_Code_Str, "w")
+
+        # Do Execution Stuff
+        # Find Newly Downloaded Code file (containing all new code to run)
+        if not self.Compile_List_Of_Users():
+            os.remove(Globe.Executing_Code_Str)
+            sys.exit(1)
+
+        # Measures User Code
+        self.measure_code()
+
+        # Move all code from old directory into new directory
+        # Clean_Up()
+
+        # Delete the control Text File
+        control_file.close()
+        os.remove(Globe.Executing_Code_Str)
+
+        # Ending Log Statement
+        self.FrankenWeb.Log_Time("EF##-\tExecution Finished", dt.now(tz))
+
+        return
 
 
 # Main Execution
