@@ -27,7 +27,7 @@ class DraculogSort:
         self.CurrentUserDir = ""
         self.TimeoutSeconds = 1000
         self.AlgorithmList = ("bubble", "insertion", "fastinsertion", "selection", "heap", "merge", "quick")
-        self.SizeList = range(10000, 50001, 10000)
+        self.SizeList = range(40000, 90001, 10000)
         self.TimeoutSeconds = 1000
         self.drac = DraculogRunner(self)
 
@@ -87,6 +87,7 @@ class DraculogSort:
 
                 # construct the command
                 commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, algorithm, size)
+                print(commands)
 
                 # run the code
                 start_time, end_time, status, output = self.drac.Execute_User_Code(commands, 0)
