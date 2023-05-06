@@ -65,10 +65,10 @@ class DraculogSort:
 
     # get a list of execution combinations, which are the keys to the actual
     # execution string
-    def getAlgorithmList(self):
+    def get_algorithms(self):
         return self.AlgorithmList
 
-    def execute(self, status, algorithm):
+    def execute(self, algorithm):
         algo_data = {
             "algorithmName": algorithm,
             "sizeRun": []
@@ -77,31 +77,30 @@ class DraculogSort:
         output = None
 
         start_time = time.time()
-        if status == 0 or status:
             # TODO Spin up other thread to wait X time for seg faults
-            try:
-                for size in self.SizeList:
-                    # start the sensors
-                    de.StartSensors(de.Sensors_Threads)
+        try:
+            for size in self.SizeList:
+                # start the sensors
+                de.StartSensors(de.Sensors_Threads)
 
-                    # construct the command
-                    commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, algorithm, size)
+                # construct the command
+                commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, algorithm, size)
 
-                    # run the code
-                    start_time, end_time, status, output = de.Execute_User_Code(status, commands)
+                # run the code
+                start_time, end_time, status, output = de.Execute_User_Code(status, commands)
 
-                    # shut down the sensors and store the results
-                    size_run_data, status = de.CompileResults(self.CurrentUserDir,
-                                                             size,
-                                                             start_time,
-                                                             end_time,
-                                                             status,
-                                                             output)
-                    algo_data["sizeRun"].append(size_run_data)
+                # shut down the sensors and store the results
+                size_run_data, status = de.CompileResults(self.CurrentUserDir,
+                                                          size,
+                                                          start_time,
+                                                          end_time,
+                                                          status,
+                                                          output)
+                algo_data["sizeRun"].append(size_run_data)
 
-            except subprocess.TimeoutExpired:
-                de.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
-                status = 4
+        except subprocess.TimeoutExpired:
+            de.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
+            status = 4
 
         if output.returncode != 0:
             de.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code error-ed out", time.time())
@@ -109,7 +108,7 @@ class DraculogSort:
 
         end_time = time.time()
         de.SensorGlobe.continueLogging = False
-        return start_time, end_time, status, output
+        return algo_data
 
 
 if __name__ == "__main__":

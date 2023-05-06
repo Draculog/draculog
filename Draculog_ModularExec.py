@@ -387,20 +387,9 @@ def Measure_Headed_User_Code():
         '''
         resultsString = "Successful Sorting"
         # For Each Submission, Loop for each algorithm in algorithms
-        for algorithm in execute_module.getAlgorithmList():
-
-            # For Each Submission of this algorithm, loop from n to m size
-            #for size in range(minSize, (maxSize + step), step):
-
-#            startTime, endTime, status, output = Execute_User_Code(status, commands)
-            startTime = 0
-            endTime = 0
-            status = ""
-            output = ""
-            if testing:
-                print(output)
-
-        algorithms_data.append(algo_data)
+        for algorithm in execute_module.get_algorithms():
+            algo_data = execute_module.execute(algorithm)
+            algorithms_data.append(algo_data)
 
         # # Compile it all together into one singular JSON #TODO fix this function
         # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
