@@ -88,11 +88,9 @@ class DraculogRunner:
         self.FrankenWeb = SharedDraculogFunctions()
 
         # Control Variables
-        self.testing = Globe.testing
-        self.verbose = Globe.verbose
+        self.testing = False
+        self.verbose = False
         self.log = Globe.log
-        self.executable = Globe.Executable_Str
-        self.timeoutSeconds = Globe.timeoutSeconds
         self.control_file = None
 
         # I have no idea how to set this... JBG
@@ -106,6 +104,7 @@ class DraculogRunner:
         self.Newly_Executed_Code_File = "Newly_Executed_Code.txt"
         self.Uploading_Code_File = "Uploading_Code.txt"
         self.Newly_Uploaded_Code_File = "Newly_Uploaded_Code.txt"
+        self.Results_Json_File = "Results.json"
         # List of Executed Code
         if not os.path.isfile(self.Newly_Executed_Code_File):
             self.Executed_File = open(self.Newly_Executed_Code_File, "w+")
@@ -241,7 +240,7 @@ class DraculogRunner:
         return result_obj
 
     def Compile_To_Json(self, json_results, User_Path):
-        Results_File = open(User_Path + "/" + Globe.Results_Json_Str, "w+")
+        Results_File = open(User_Path + "/" + self.Results_Json_File, "w+")
         json.dump(json_results, Results_File)
         Results_File.close()
         return
@@ -250,12 +249,12 @@ class DraculogRunner:
     def Add_Executed_Path_To_File(self, UserPath, TimeStamp):
         global Executed_Code_List
         if self.Executed_File is None:
-            self.Executed_File = open(Globe.Newly_Executed_Code_str, "a+")
+            self.Executed_File = open(self.Newly_Executed_Code_File, "a+")
         self.Executed_File.write(UserPath + "_Executed-" + str(TimeStamp) + "\n")
         Executed_Code_List.append(UserPath + "_Executed-" + str(TimeStamp))
         return
 
-    def Execute_User_Code(self, commands, status):
+    def Execute_User_Code(self, commands, timeout, status):
         output = None
         start_time = time.time()
         if status == 0 or status:
@@ -264,7 +263,7 @@ class DraculogRunner:
             try:
                 output = subprocess.run(commands,
                                         shell=True,
-                                        timeout=self.timeoutSeconds,
+                                        timeout=timeout,
                                         capture_output=True,
                                         text=True)
                 # , stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) # Old Flags
@@ -433,7 +432,7 @@ class DraculogRunner:
             shutil.rmtree(self.Downloaded_Code_List[index])
 
         # Remove no longer needed file
-        os.remove(Globe.Newly_Downloaded_Code_Str)
+        os.remove(self.New_Downloaded_Code_File)
 
         return
 
@@ -443,24 +442,24 @@ class DraculogRunner:
 
         # Checks to see if we are already downloading, executing, or uploading code
         global control_file
-        if os.path.isfile(Globe.Downloading_Code_Str) or os.path.isfile(Globe.Uploading_Code_Str):
-            errorStr = "Downloading" if os.path.isfile(Globe.Downloading_Code_Str) else "Uploading"
+        if os.path.isfile(self.Downloading_Code_File) or os.path.isfile(self.Uploading_Code_File):
+            errorStr = "Downloading" if os.path.isfile(self.Downloading_Code_File) else "Uploading"
             print("Wait: Draculog is currently " + errorStr + " code. . . . .")
-            os.remove("Here1: " + Globe.Executing_Code_Str)
+            os.remove("Here1: " + self.Executing_Code_File)
             sys.exit(2)
-        if os.path.isfile(Globe.Executing_Code_Str):
+        if os.path.isfile(self.Executing_Code_File):
             print("Wait: Draculog is currently still Executing code. . . . .")
-            print("Here2: " + Globe.Executing_Code_Str)
-            os.remove(Globe.Executing_Code_Str)
+            print("Here2: " + self.Executing_Code_File)
+            os.remove(self.Executing_Code_File)
             sys.exit(2)
 
         # Make a control Text File
-        control_file = open(Globe.Executing_Code_Str, "w")
+        control_file = open(self.Executing_Code_File, "w")
 
         # Do Execution Stuff
         # Find Newly Downloaded Code file (containing all new code to run)
         if not self.Compile_List_Of_Users():
-            os.remove(Globe.Executing_Code_Str)
+            os.remove(self.Executing_Code_File)
             sys.exit(1)
 
         # Measures User Code
@@ -471,7 +470,7 @@ class DraculogRunner:
 
         # Delete the control Text File
         control_file.close()
-        os.remove(Globe.Executing_Code_Str)
+        os.remove(self.Executing_Code_File)
 
         # Ending Log Statement
         self.FrankenWeb.Log_Time("EF##-\tExecution Finished", dt.now(tz))
