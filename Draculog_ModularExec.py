@@ -342,13 +342,13 @@ def Execute_User_Code(status, commands):
     return start_time, end_time, status, output
 
 
-def Measure_Headed_User_Code():
+def measure_code():
     global Sensors_Threads
 
     # Loop for Each Submission
     for User_Path in Downloaded_Code_List:
         # Overall Directory is 0, User ID is 1, Submission ID is 2
-        User_Path_Split = User_Path.split('/')
+        user_path_split = User_Path.split('/')
 
         if testing:
             print("Running " + User_Path + "'s Code")
@@ -392,10 +392,10 @@ def Measure_Headed_User_Code():
             algorithms_data.append(algo_data)
 
         # # Compile it all together into one singular JSON #TODO fix this function
-        # Compile_Headed_Data(result_json, User_Path_Split[2], measurements, startTime,
+        # Compile_Headed_Data(result_json, user_path_split[2], measurements, startTime,
         #                     endTime, size, algo, status, output)
 
-        json_results = Compile_Headed_Data(User_Path_Split[1], status, resultsString, algorithms_data)
+        json_results = Compile_Headed_Data(user_path_split[1], status, resultsString, algorithms_data)
         # Save it as a file in user path
         Compile_To_Json(json_results, User_Path)
         # json.dump(json_results, Results_File)
@@ -407,7 +407,7 @@ def Measure_Headed_User_Code():
     return
 
 
-def CompileResults(user_path, size, start_time, end_time, status, output):
+def compile_results(user_path, size, start_time, end_time, status, output):
     # Finishes Execution of All sensors (PyRAPL)
     # Wait for all sensors to finish
     # Wait_For_Sensor_Threads()
@@ -417,35 +417,38 @@ def CompileResults(user_path, size, start_time, end_time, status, output):
     # measurements = Gather_Sensor_Data() # Gets a list of sensors and data points
     # Check for Status errors from execution
     # if output.stdout.split()
+    results_string = ""
     if status != 0:
         if status == 2:
             FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + user_path, dt.now(tz),
                                 OnlyPrint=True)
-            resultsString = output.stderr
+            results_string = output.stderr
             # break
         if status == 4:
             FrankenWeb.Log_Time("ERROR-*-\tTimeout Error - " + user_path, dt.now(tz),
                                 OnlyPrint=True)
-            resultsString = "Timeout error, code ran for longer than " + str(timeoutSeconds)
+            results_string = "Timeout error, code ran for longer than " + str(timeoutSeconds)
             # break
-    outputString = output.stdout.split()
-    if outputString[outputString.index("sorted:") + 1] != "true":
+    results_string = output.stdout.split()
+    if results_string[results_string.index("sorted:") + 1] != "true":
         status = 3
         FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + user_path, dt.now(tz),
                             OnlyPrint=True)
         resultsString = "Numbers failed to sort, please check your algorithm(s)"
         # break
     # Gather all needed Data (Energy and Delta Time)
-    sizeRun_data = {
+    size_run_data = {
         "size": size,
         "seconds": end_time - start_time,
         "microjoules": Sensors_List["PyRAPL"].Get_Data(),
         "gramsco2": Get_Carbon(Sensors_List["PyRAPL"].Get_Data())
     }
     if testing:
-        print(sizeRun_data)
+        print(size_run_data)
+
+    return size_run_data
     # combined_measurements = Combine_Data(measurements) # Returns a dictionary of those data points organized
-    algo_data["sizeRun"].append(sizeRun_data)
+    # algo_data["sizeRun"].append(size_run_data)
     # return resultsString, s#tatus
 
 
@@ -528,10 +531,7 @@ def main():
         sys.exit(1)
 
     # Measures User Code
-    if header_file_usage:
-        Measure_Headed_User_Code()
-    else:
-        Measure_Headless_User_Code()
+    measure_code()
 
     # Move all code from old directory into new directory
     # Clean_Up()

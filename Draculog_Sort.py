@@ -77,7 +77,7 @@ class DraculogSort:
         output = None
 
         start_time = time.time()
-            # TODO Spin up other thread to wait X time for seg faults
+        # TODO Spin up other thread to wait X time for seg faults
         try:
             for size in self.SizeList:
                 # start the sensors
@@ -87,15 +87,15 @@ class DraculogSort:
                 commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, algorithm, size)
 
                 # run the code
-                start_time, end_time, status, output = de.Execute_User_Code(status, commands)
+                start_time, end_time, status, output = de.Execute_User_Code(commands)
 
                 # shut down the sensors and store the results
-                size_run_data, status = de.CompileResults(self.CurrentUserDir,
-                                                          size,
-                                                          start_time,
-                                                          end_time,
-                                                          status,
-                                                          output)
+                size_run_data = de.compile_results(self.CurrentUserDir,
+                                                   size,
+                                                   start_time,
+                                                   end_time,
+                                                   status,
+                                                   output)
                 algo_data["sizeRun"].append(size_run_data)
 
         except subprocess.TimeoutExpired:
