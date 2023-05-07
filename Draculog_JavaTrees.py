@@ -30,6 +30,7 @@ class DraculogTrees:
         self.SizeList = range(20000, 50001, 10000)
         self.SearchCount = 100000
         self.TimeoutSeconds = 1000
+        self.HasBaseFiles = False
         self.drac = DraculogRunner(self)
 
     # will build the code in the given directory
@@ -37,27 +38,11 @@ class DraculogTrees:
     # will throw an exception if the target directory does not exist
     def buildCode(self, userDirectory):
         self.CurrentUserDir = userDirectory
-        logging.debug("copying base files from " + self.BaseDirectory + " to " + userDirectory)
-
-        # verify that the destination directory exists
-        if not os.path.isdir(userDirectory):
-            raise Exception("Attempting to copy to directory '" + userDirectory + ",' which doesn't exist")
-
-        # verify that the source directory for the base files exist
-        if not os.path.isdir(self.BaseDirectory):
-            raise Exception("Attempting to copy from directory '" + self.BaseDirectory + "', which doesn't exist")
-
-        # copy each file
-        for file in self.CopyFiles:
-            src = self.BaseDirectory + "/" + file
-            if not os.path.exists(src):
-                raise Exception("Attempting to copy file '" + src + "', which doesn't exist")
-            shutil.copy2(src, userDirectory)
-
-        logging.debug("  copying successful")
+        if self.HasBaseFiles:
+            self.copy_base_files(userDirectory)
 
         logging.debug("starting build process")
-        built = subprocess.run("cd " + userDirectory + " && make", shell=True, capture_output=True, text=True)
+        built = subprocess.run("cd " + userDirectory + " && javac *.java", shell=True, capture_output=True, text=True)
         if built.returncode != 0:
             status = 1
             self.drac.Compile_To_Json(
@@ -65,6 +50,22 @@ class DraculogTrees:
                 userDirectory)
             logging.error("failed to compile " + userDirectory + ": " + built.stderr)
         logging.debug("ending build process")
+
+    def copy_base_files(self, userDirectory):
+        logging.debug("copying base files from " + self.BaseDirectory + " to " + userDirectory)
+        # verify that the destination directory exists
+        if not os.path.isdir(userDirectory):
+            raise Exception("Attempting to copy to directory '" + userDirectory + ",' which doesn't exist")
+        # verify that the source directory for the base files exist
+        if not os.path.isdir(self.BaseDirectory):
+            raise Exception("Attempting to copy from directory '" + self.BaseDirectory + "', which doesn't exist")
+        # copy each file
+        for file in self.CopyFiles:
+            src = self.BaseDirectory + "/" + file
+            if not os.path.exists(src):
+                raise Exception("Attempting to copy file '" + src + "', which doesn't exist")
+            shutil.copy2(src, userDirectory)
+        logging.debug("  copying successful")
 
     # get a list of execution combinations, which are the keys to the actual
     # execution string
