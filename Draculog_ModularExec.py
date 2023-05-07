@@ -343,7 +343,7 @@ class DraculogRunner:
 
         return
 
-    def compile_results(self, user_path, size, start_time, end_time, status, output):
+    def compile_results(self, user_path, commands, size, start_time, end_time, status, output):
         # Finishes Execution of All sensors (PyRAPL)
         # Wait for all sensors to finish
         # Wait_For_Sensor_Threads()
@@ -355,6 +355,7 @@ class DraculogRunner:
         # if output.stdout.split()
         results_string = ""
         if status != 0:
+            self.FrankenWeb.Log_Time("ERROR executing '" + commands + "'")
             if status == 2:
                 self.FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + user_path, dt.now(tz),
                                          OnlyPrint=True)
@@ -365,8 +366,7 @@ class DraculogRunner:
                                          OnlyPrint=True)
                 results_string = "Timeout error, code ran for longer than " + str(self.timeoutSeconds)
                 # break
-        results_string = output.stdout.split()
-        if results_string[results_string.index("sorted:") + 1] != "true":
+        if not self.execute_module.validate_output(output):
             status = 3
             self.FrankenWeb.Log_Time("ERROR-*-\tCode Failed to Sort - " + user_path, dt.now(tz),
                                      OnlyPrint=True)

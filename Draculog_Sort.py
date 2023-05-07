@@ -26,9 +26,10 @@ class DraculogSort:
         self.Executable = "sort"
         self.CurrentUserDir = ""
         self.TimeoutSeconds = 1000
+        self.AlgorithmList = ("bubble", "insertion", "fastinsertion", "selection")
+        # not all sorts implemented yet
         # self.AlgorithmList = ("bubble", "insertion", "fastinsertion", "selection", "heap", "merge", "quick")
-        self.AlgorithmList = ("fastinsertion", "selection")
-        self.SizeList = range(20000, 20001, 10000)
+        self.SizeList = range(40000, 50001, 10000)
         self.TimeoutSeconds = 1000
         self.drac = DraculogRunner(self)
 
@@ -84,7 +85,7 @@ class DraculogSort:
         try:
             for size in self.SizeList:
                 # start the sensors
-                self.drac.StartSensors(self.drac.Sensors_Threads)
+                self.drac.StartSensors()
 
                 # construct the command
                 commands = "./%s/%s %s %s" % (self.CurrentUserDir, self.Executable, size, algorithm)
@@ -96,6 +97,7 @@ class DraculogSort:
 
                 # shut down the sensors and store the results
                 size_run_data = self.drac.compile_results(self.CurrentUserDir,
+                                                          commands,
                                                           size,
                                                           start_time,
                                                           end_time,
@@ -114,11 +116,21 @@ class DraculogSort:
         end_time = time.time()
         return algo_data
 
+    def validate_output(self, output):
+        results_string = output.stdout.split()
+        if 'sorted:' not in results_string:
+          return False
+        elif results_string[results_string.index("sorted:") + 1] != "true":
+          return False
+        else:
+          return True
+      
+
     def run(self):
         self.drac.run()
 
 
 if __name__ == "__main__":
     ds = DraculogSort()
-    ds.run()
 #    ds.buildCode("Source/test_238")
+    ds.run()

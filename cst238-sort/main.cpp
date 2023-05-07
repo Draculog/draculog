@@ -5,6 +5,8 @@
 #include <string>
 using namespace std;
 
+const string FILEPATH="Source/test_238/";
+
 // Function prototypes
 int *readNumbers(int &size);
 
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]) {
        case 's':
           selection_sort(a, size);
           break;
-       /* case 'h':
+       /*case 'h':
           heap_sort(a, size);
           break;
        case 'm':
@@ -53,7 +55,7 @@ int main(int argc, char *argv[]) {
           break;
        case 'q':
           quick_sort(a, size);
-          break; */
+          break;*/
        default:
           break;
     }
@@ -69,13 +71,14 @@ int main(int argc, char *argv[]) {
 int *readNumbers(int &size) {
 	// File stream object
 	ifstream inFile;
+  string filename = FILEPATH + to_string(size) + ".txt";
 
 	// Open the input file.
-	inFile.open("Source/austin_sortcode/" + to_string(size) + ".txt");
+	inFile.open(filename);
 
 	// Test for errors.
 	if (inFile.fail()) {
-		cout << "Error opening the file.\n";
+		cout << "Error opening the file " + filename + ".\n";
 		exit(1);
 	}
 
