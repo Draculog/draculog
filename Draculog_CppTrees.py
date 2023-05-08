@@ -20,10 +20,10 @@ class DraculogTrees:
     def __init__(self):
         logging.basicConfig(filename='app.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s',
                             level=logging.DEBUG)
-        self.BaseDirectory = "java-trees"
+        self.BaseDirectory = "cpp-trees"
         self.CopyFiles = []
         self.ParamDict = OrderedDict()
-        self.ExecutableString = "java -Xss10m -classpath %s TreeTiming %s %s %s"
+        self.ExecutableString = "trees %s %s %s"
         self.CurrentUserDir = ""
         self.TimeoutSeconds = 1000
         self.AlgorithmList = ("BST", "AVL",)
@@ -44,7 +44,7 @@ class DraculogTrees:
             self.copy_base_files(userDirectory)
 
         logging.debug("starting build process")
-        built = subprocess.run("cd " + userDirectory + " && javac *.java", shell=True, capture_output=True, text=True)
+        built = subprocess.run("cd " + userDirectory + " && make", shell=True, capture_output=True, text=True)
         if built.returncode != 0:
             status = 1
             self.drac.Compile_To_Json(
