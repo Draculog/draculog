@@ -23,12 +23,13 @@ class DraculogTrees:
         self.BaseDirectory = "java-trees"
         self.CopyFiles = []
         self.ParamDict = OrderedDict()
-        self.ExecutableString = "java -classpath %s TreeTiming %s %s %s"
+        self.ExecutableString = "java -Xss10m -classpath %s TreeTiming %s %s %s"
         self.CurrentUserDir = ""
         self.TimeoutSeconds = 1000
         self.AlgorithmList = ("BST", "AVL",)
-        self.SizeList = range(20000, 50001, 10000)
+        self.SizeList = range(200000, 800001, 200000)
         self.SearchCount = 100000
+        self.SearchMultiplier = 1000
         self.TimeoutSeconds = 1000
         self.HasBaseFiles = False
         self.drac = DraculogRunner(self)
@@ -87,8 +88,9 @@ class DraculogTrees:
                 # start the sensors
                 self.drac.StartSensors()
 
+                searches = self.SearchCount * self.SearchMultiplier
                 # construct the command
-                commands = self.ExecutableString % (self.CurrentUserDir, algorithm, size, self.SearchCount)
+                commands = self.ExecutableString % (self.CurrentUserDir, algorithm, size, searches)
 
                 # run the code
                 start_time, end_time, status, output = self.drac.Execute_User_Code(commands,
@@ -114,6 +116,7 @@ class DraculogTrees:
             status = 2
 
         end_time = time.time()
+        time.sleep(60)
         return algo_data
 
     def validate_output(self, output):
