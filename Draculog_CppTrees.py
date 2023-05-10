@@ -23,13 +23,13 @@ class DraculogTrees:
         self.BaseDirectory = "cpp-trees"
         self.CopyFiles = []
         self.ParamDict = OrderedDict()
-        self.ExecutableString = "trees %s %s %s"
+        self.ExecutableString = "%s/trees %s %s %s"
         self.CurrentUserDir = ""
         self.TimeoutSeconds = 1000
-        self.AlgorithmList = ("BST", "AVL",)
+        self.AlgorithmList = ("avl", "bstn")
         self.SizeList = range(200000, 800001, 200000)
-        self.SearchCount = 100000
-        self.SearchMultiplier = 1000
+        self.SearchCount = 50000000
+        self.SearchMultiplier = 1
         self.TimeoutSeconds = 1000
         self.HasBaseFiles = False
         self.SleepLength = 60 # in seconds
@@ -98,6 +98,8 @@ class DraculogTrees:
                                                                                    self.TimeoutSeconds,
                                                                                    0)
 
+                t = end_time - start_time
+                print(commands + " " + str(t))
                 # shut down the sensors and store the results
                 size_run_data = self.drac.compile_results(self.CurrentUserDir,
                                                           commands,
@@ -108,6 +110,8 @@ class DraculogTrees:
                                                           output)
                 algo_data["sizeRun"].append(size_run_data)
 
+                time.sleep(self.SleepLength)
+
         except subprocess.TimeoutExpired:
             self.drac.FrankenWeb.Log_Time("ERROR-CODE-*-\tDownloaded code timed out", time.time())
             status = 4
@@ -117,7 +121,6 @@ class DraculogTrees:
             status = 2
 
         end_time = time.time()
-        time.sleep(self.SleepLength)
         return algo_data
 
     def validate_output(self, output):

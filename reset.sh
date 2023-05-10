@@ -1,4 +1,4 @@
-NAME="Source/java_trees"
+NAME="Source/cpp_trees"
 EC_FILE="Newly_Executed_Code.txt"
 DC_FILE="Newly_Downloaded_Code.txt"
 EX_FILE="Executing_Code.txt"
