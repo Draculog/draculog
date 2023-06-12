@@ -355,7 +355,7 @@ class DraculogRunner:
         # if output.stdout.split()
         results_string = ""
         if status != 0:
-            self.FrankenWeb.Log_Time("ERROR executing '" + commands + "'")
+            self.FrankenWeb.Log_Time("ERROR executing '" + commands + "'", dt.now(tz))
             if status == 2:
                 self.FrankenWeb.Log_Time("ERROR-*-\tExecution Failed - " + user_path, dt.now(tz),
                                          OnlyPrint=True)
